@@ -1,0 +1,726 @@
+// useFileStore.js
+import { create } from "zustand";
+import supabase from "@/utils/Supabase-client.js";
+import { toast } from "@/components/ui/use-toast";
+import axios from "axios";
+
+const DEFAULT_IMAGE_URL = import.meta.env.VITE_SUPABASE_DEFAULT_COVER;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
+const BUCKET_NAME = "notes";
+const moyasar_key = import.meta.env.VITE_SK_LIVE;
+
+export const useFileStore = create((set, get) => ({
+  loading: false,
+  error: null,
+  files: [],
+  note: null,
+  notes: [],
+  growthRate: 0,
+  totalNotes: 0,
+  totalFiles: 0,
+  downloadLoading: false,
+
+  createNote: async ({
+    title,
+    description,
+    price,
+    university,
+    college,
+    subject,
+    pagesNumber,
+    year,
+    contactMethod,
+    file,
+    imageFile,
+  }) => {
+    try {
+      set({ loading: true, error: null });
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("المستخدم غير مسجل الدخول");
+      }
+
+      if (!file) {
+        throw new Error("يجب اختيار ملف PDF");
+      }
+
+      const pdfExtension = file.name.split(".").pop();
+      const pdfFilename = `pdfs/${user.id}_${Date.now()}.${pdfExtension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .upload(pdfFilename, file);
+
+      if (uploadError) {
+        throw new Error("فشل في رفع ملف PDF: " + uploadError.message);
+      }
+
+      const { data: pdfUrl } = supabase.storage
+        .from(BUCKET_NAME)
+        .getPublicUrl(pdfFilename);
+
+      let imageUrl = DEFAULT_IMAGE_URL;
+      if (imageFile) {
+        const imgExtension = imageFile.name.split(".").pop();
+        const imgFilename = `images/${user.id}_${Date.now()}.${imgExtension}`;
+
+        const { error: imageUploadError } = await supabase.storage
+          .from(BUCKET_NAME)
+          .upload(imgFilename, imageFile);
+
+        if (imageUploadError) {
+          console.error("Image upload error:", imageUploadError);
+          throw new Error("فشل في رفع الصورة: " + imageUploadError.message);
+        }
+
+        const { data: imageUrlData } = supabase.storage
+          .from(BUCKET_NAME)
+          .getPublicUrl(imgFilename);
+        imageUrl = imageUrlData.publicUrl;
+      }
+
+      const { data: files, error: insertError } = await supabase
+        .from("files")
+        .insert([
+          {
+            title,
+            description,
+            price: Number(price) || 0,
+            file_url: pdfUrl.publicUrl,
+            cover_url: imageUrl,
+            owner_id: user.id,
+            university,
+            college,
+            subject,
+            pages_number: Number(pagesNumber) || 0,
+            year: Number(year) || new Date().getFullYear(),
+            contact_method: contactMethod,
+            created_at: new Date().toISOString(),
+            downloads: 0,
+            file_path: pdfFilename,
+          },
+        ])
+        .select();
+
+      if (insertError) {
+        throw new Error("فشل حفظ بيانات الملف: " + insertError.message);
+      }
+
+      await get().getNotesCount();
+
+      await supabase.from("notifications").insert({
+        user_id: user.id,
+        title: "تم إنشاء ملخص جديد",
+        body: `تم إنشاء ملخص جديد بعنوان "${title}" وهو قيد المراجعة`,
+        type: "note",
+      });
+
+      toast({
+        title: "تم إنشاء الملخص بنجاح",
+        description: "سيتم مراجعة الملخص من قبل الإدارة قبل نشره.",
+        variant: "default",
+      });
+
+      set({ loading: false, error: null });
+      return files[0];
+    } catch (err) {
+      console.error("Error in createNote:", err);
+      toast({
+        title: "حدث خطأ",
+        description: err.message || "حدث خطأ غير متوقع أثناء إنشاء الملخص",
+        variant: "destructive",
+      });
+      set({ loading: false, error: err.message });
+      return null;
+    }
+  },
+
+  getAllNotes: async (page = 1, itemsPerPage = 10) => {
+    try {
+      set({ loading: true, error: null });
+
+      const from = (page - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
+      const {
+        data: files,
+        count,
+        error,
+      } = await supabase
+        .from("files")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        throw new Error("فشل في جلب الملفات");
+      }
+
+      set({
+        loading: false,
+        error: null,
+        files: files || [],
+        totalFiles: count || 0,
+      });
+
+      return {
+        data: files,
+        totalItems: count,
+        totalPages: Math.ceil(count / itemsPerPage),
+        currentPage: page,
+      };
+    } catch (err) {
+      console.error(err);
+      set({ loading: false, error: err.message });
+      return null;
+    }
+  },
+
+  searchNotes: async (query, filters = {}, page = 1, itemsPerPage = 10) => {
+    try {
+      set({ loading: true, error: null });
+
+      const from = (page - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
+      let supabaseQuery = supabase
+        .from("files")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (query) {
+        supabaseQuery = supabaseQuery.or(
+          `title.ilike.%${query}%,description.ilike.%${query}%,subject.ilike.%${query}%`
+        );
+      }
+
+      if (filters.university) {
+        supabaseQuery = supabaseQuery.eq("university", filters.university);
+      }
+
+      if (filters.college) {
+        supabaseQuery = supabaseQuery.eq("college", filters.college);
+      }
+
+      if (filters.year) {
+        supabaseQuery = supabaseQuery.eq("year", filters.year);
+      }
+
+      if (filters.subject) {
+        supabaseQuery = supabaseQuery.ilike("subject", `%${filters.subject}%`);
+      }
+
+      const { data: files, count, error } = await supabaseQuery;
+
+      if (error) throw error;
+
+      set({
+        loading: false,
+        files: files || [],
+        error: null,
+        totalNotes: count || 0,
+      });
+
+      return {
+        data: files,
+        totalItems: count,
+        totalPages: Math.ceil(count / itemsPerPage),
+        currentPage: page,
+      };
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "فشل في البحث",
+        description: err.message || "حدث خطأ أثناء البحث",
+        variant: "destructive",
+      });
+      set({ loading: false, error: err.message });
+      return null;
+    }
+  },
+
+  getSingleNote: async (id) => {
+    try {
+      set({ loading: true, error: null });
+
+      if (!id) {
+        throw new Error("معرف الملخص غير صالح");
+      }
+
+      const { data, error } = await supabase
+        .from("files")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        throw new Error("فشل تحميل بيانات الملخص من الخادم");
+      }
+
+      if (!data) {
+        throw new Error("لم يتم العثور على الملخص المطلوب");
+      }
+
+      set({ note: data, loading: false, error: null });
+      return data;
+    } catch (error) {
+      console.error("Error in getSingleNote:", error);
+      set({ loading: false, error: error.message });
+      throw error;
+    }
+  },
+
+  getSellerNotes: async ({ sellerId }) => {
+    try {
+      set({ loading: true, error: null });
+      const { data, error } = await supabase
+        .from("files")
+        .select("*")
+        .eq("owner_id", sellerId);
+
+      if (error) throw error;
+
+      set({ loading: false, files: data || [] });
+      return data;
+    } catch (error) {
+      console.error("Error in getSellerNotes:", error);
+      set({ loading: false, error: error.message });
+      return [];
+    }
+  },
+
+  deleteNote: async (id) => {
+    try {
+      set({ loading: true, error: null });
+
+      const { data: note, error: fetchError } = await supabase
+        .from("files")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (note.file_path) {
+        await supabase.storage.from(BUCKET_NAME).remove([note.file_path]);
+      }
+
+      if (note.cover_url && !note.cover_url.includes(DEFAULT_IMAGE_URL)) {
+        const coverPath = note.cover_url.split(`${BUCKET_NAME}/`)[1];
+        await supabase.storage.from(BUCKET_NAME).remove([coverPath]);
+      }
+
+      const { error } = await supabase.from("files").delete().eq("id", id);
+      if (error) throw error;
+
+      await get().getNotesCount();
+
+      await supabase.from("notifications").insert({
+        user_id: note.owner_id,
+        title: "تم حذف ملخص",
+        body: `تم حذف ملخصك بعنوان "${note.title}"`,
+        type: "note",
+      });
+
+      toast({
+        title: "تم حذف الملخص بنجاح",
+        variant: "default",
+      });
+
+      set({ loading: false });
+      return true;
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      set({ loading: false, error: error.message });
+      return false;
+    }
+  },
+
+  downloadNote: async ({ filePath }) => {
+    try {
+      set({ downloadLoading: true, error: null });
+      const { data, error } = await supabase.storage
+        .from(BUCKET_NAME)
+        .download(filePath);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filePath.split("/").pop();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      await supabase.rpc("increment_download", { file_id: filePath });
+
+      set({ downloadLoading: false });
+    } catch (error) {
+      console.error("Download error:", error);
+      set({ downloadLoading: false, error: error.message });
+      throw error;
+    }
+  },
+
+  purchaseNote: async ({ noteId, userId }) => {
+    set({ loading: true, error: null });
+
+    try {
+      // 1. Fetch the note details
+      const { data: currentFile, error: fetchError } = await supabase
+        .from("files")
+        .select("*")
+        .eq("id", noteId)
+        .single();
+
+      if (fetchError)
+        throw new Error("Failed to fetch note: " + fetchError.message);
+      if (!currentFile) throw new Error("Note not found");
+
+      // 2. Check if user already purchased
+      const currentPurchasers = currentFile.purchased_by || [];
+      if (currentPurchasers.includes(userId)) {
+        throw new Error("لقد قمت بشراء هذا الملخص مسبقاً");
+      }
+
+      // 3. Calculate amounts with 15% platform fee
+      const platformFeeRate = 0.15; // 15% platform fee
+      const platformFee = currentFile.price * platformFeeRate;
+      const ownerEarnings = currentFile.price - platformFee;
+
+      // 4. Start transaction (using Supabase's transaction feature)
+      const { data: transactionResult, error: transactionError } =
+        await supabase.rpc("handle_note_purchase", {
+          note_id: noteId,
+          buyer_id: userId,
+          owner_id: currentFile.owner_id,
+          note_price: currentFile.price,
+          platform_fee_rate: platformFeeRate,
+        });
+
+      if (transactionError)
+        throw new Error("Transaction failed: " + transactionError.message);
+
+      // 5. Record sale
+      const { data: salesData, error: salesError } = await supabase
+        .from("sales")
+        .insert([
+          {
+            user_id: userId,
+            note_id: noteId,
+            amount: currentFile.price,
+            platform_fee: platformFee,
+            owner_earnings: ownerEarnings,
+            payment_method: "bank",
+            status: "complete",
+            user_name: transactionResult.owner_name,
+            note_title: currentFile.title,
+          },
+        ]);
+
+      if (salesError)
+        throw new Error("Failed to record sale: " + salesError.message);
+
+      // 6. Send notifications
+      await supabase.from("notifications").insert([
+        {
+          user_id: userId,
+          title: "تم شراء ملخص",
+          body: `تم شراء ملخص "${currentFile.title}" بنجاح`,
+          type: "purchase",
+        },
+        {
+          user_id: currentFile.owner_id,
+          title: "تم بيع ملخص",
+          body: `تم بيع ملخصك "${
+            currentFile.title
+          }" وتم إضافة ${ownerEarnings.toFixed(2)} إلى رصيدك`,
+          type: "sale",
+        },
+      ]);
+
+      set({ loading: false });
+      return {
+        success: true,
+        data: {
+          ...salesData,
+          platformFee,
+          ownerEarnings,
+        },
+      };
+    } catch (error) {
+      console.error("Purchase failed:", error.message);
+      set({
+        loading: false,
+        error: error.message || "حدث خطأ غير متوقع",
+      });
+      return { success: false, error: error.message };
+    }
+  },
+  addReviewToNote: async ({ noteId, reviewData }) => {
+    try {
+      set({ loading: true, error: null });
+
+      const { data: currentFile, error: fetchError } = await supabase
+        .from("files")
+        .select("reviews")
+        .eq("id", noteId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const currentReviews = currentFile.reviews || [];
+      const existingReviewIndex = currentReviews.findIndex(
+        (review) => review.userId === reviewData.userId
+      );
+
+      if (existingReviewIndex !== -1) {
+        currentReviews[existingReviewIndex] = reviewData;
+      } else {
+        currentReviews.push(reviewData);
+      }
+
+      const { error } = await supabase
+        .from("files")
+        .update({ reviews: currentReviews })
+        .eq("id", noteId);
+
+      if (error) throw error;
+
+      await supabase.from("notifications").insert({
+        user_id: reviewData.userId,
+        title: "تمت إضافة تقييم",
+        body: "تمت إضافة تقييمك للملخص بنجاح",
+        type: "review",
+      });
+
+      set({ loading: false });
+      return { success: true };
+    } catch (error) {
+      console.error("Error adding review:", error);
+      set({ loading: false, error: error.message });
+      return { success: false, error: error.message };
+    }
+  },
+
+  getPurchasedNotes: async ({ userId }) => {
+    try {
+      set({ loading: true, error: null });
+      const { data, error } = await supabase
+        .from("files")
+        .select("*")
+        .contains("purchased_by", [userId]);
+
+      if (error) throw error;
+
+      set({ loading: false, files: data || [] });
+      return data;
+    } catch (error) {
+      console.error("Error fetching purchased notes:", error);
+      set({ loading: false, error: error.message });
+      return [];
+    }
+  },
+
+  hasUserReviewed: async ({ noteId, userId }) => {
+    try {
+      const { data, error } = await supabase
+        .from("files")
+        .select("reviews")
+        .eq("id", noteId)
+        .single();
+
+      if (error) throw error;
+
+      return data.reviews?.some((review) => review.userId === userId) || false;
+    } catch (error) {
+      console.error("Error checking review:", error);
+      return false;
+    }
+  },
+
+  getPaginatedNotes: async (page = 1, itemsPerPage = 10, filters = {}) => {
+    try {
+      set({ loading: true, error: null });
+
+      const from = (page - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
+      let query = supabase
+        .from("files")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (filters.search) {
+        query = query.or(
+          `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,subject.ilike.%${filters.search}%`
+        );
+      }
+      if (filters.university) {
+        query = query.eq("university", filters.university);
+      }
+      if (filters.college) {
+        query = query.eq("college", filters.college);
+      }
+      if (filters.year) {
+        query = query.eq("year", filters.year);
+      }
+      if (filters.subject) {
+        query = query.ilike("subject", `%${filters.subject}%`);
+      }
+
+      const { data, count, error } = await query;
+
+      if (error) throw error;
+
+      set({
+        loading: false,
+        notes: data || [],
+        totalNotes: count || 0,
+      });
+
+      return {
+        data,
+        totalItems: count,
+        totalPages: Math.ceil(count / itemsPerPage),
+        currentPage: page,
+      };
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+      set({ loading: false, error: error.message });
+      return null;
+    }
+  },
+
+  getNotesCount: async (filters = {}) => {
+    try {
+      let query = supabase
+        .from("files")
+        .select("*", { count: "exact", head: true });
+
+      if (filters.search) {
+        query = query.or(
+          `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%,subject.ilike.%${filters.search}%`
+        );
+      }
+
+      const { count, error } = await query;
+
+      if (error) throw error;
+
+      set({ totalFiles: count || 0 });
+      return count || 0;
+    } catch (error) {
+      console.error("Error getting notes count:", error);
+      return 0;
+    }
+  },
+
+  getFilesMonthlyGrowth: async () => {
+    try {
+      set({ loading: true, error: null });
+      const { data, error } = await supabase.rpc("get_files_monthly_growth");
+
+      if (error) throw error;
+
+      set({ growthRate: data?.growth_rate || 0, loading: false });
+      return data;
+    } catch (error) {
+      console.error("Error fetching files growth:", error);
+      set({ loading: false, error: error.message });
+      return {
+        current_count: 0,
+        previous_count: 0,
+        growth_rate: 0,
+      };
+    }
+  },
+
+  createPaymentLink: async ({ noteId, userId, amount }) => {
+    try {
+      set({ loading: true, error: null });
+
+      const response = await axios.post(
+        "https://api.moyasar.com/v1/invoices",
+        {
+          amount: parseInt(amount) * 100,
+          currency: "SAR",
+          description: `شراء ملخص رقم ${noteId}`,
+          callback_url: `http://localhost:5173/payment-success?noteId=${noteId}&userId=${userId}`,
+          success_url: `http://localhost:5173/payment-success?noteId=${noteId}&userId=${userId}`,
+          back_url: `http://localhost:5173/checkout?noteId=${noteId}`,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Basic " + btoa(moyasar_key),
+          },
+        }
+      );
+
+      const data = response.data;
+      if (!data.url) {
+        throw new Error("فشل في إنشاء رابط الدفع");
+      }
+
+      await supabase.from("notifications").insert({
+        user_id: userId,
+        title: "تم إنشاء رابط دفع",
+        body: "تم إنشاء رابط دفع لشراء الملخص",
+        type: "payment",
+      });
+
+      set({ loading: false });
+      return { success: true, url: data.url };
+    } catch (error) {
+      console.error("Error creating payment link:", error);
+      set({ loading: false, error: error.message });
+      return { success: false, error: error.message };
+    }
+  },
+
+  getCollegesByUniversity: async (university) => {
+    try {
+      const { data, error } = await supabase
+        .from("files")
+        .select("college")
+        .eq("university", university)
+        .neq("college", null);
+
+      if (error) throw error;
+
+      return [...new Set(data.map((item) => item.college))];
+    } catch (error) {
+      console.error("Error fetching colleges:", error);
+      return [];
+    }
+  },
+
+  getUniversities: async () => {
+    try {
+      const { data, error } = await supabase
+        .from("files")
+        .select("university")
+        .neq("university", null);
+
+      if (error) throw error;
+
+      return [...new Set(data.map((item) => item.university))];
+    } catch (error) {
+      console.error("Error fetching universities:", error);
+      return [];
+    }
+  },
+
+  clearError: () => set({ error: null }),
+}));
