@@ -20,7 +20,7 @@ const LoginDialog = ({ isOpen, onClose, onSwitchToRegister }) => {
   const { login, loading, error, clearError, user } = useAuthStore(
     (state) => state
   );
-  // Show toast when error changes
+
   useEffect(() => {
     if (error) {
       toast({
@@ -28,7 +28,7 @@ const LoginDialog = ({ isOpen, onClose, onSwitchToRegister }) => {
         description: error,
         variant: "destructive",
       });
-      clearError(); // clear the error after showing it once
+      clearError();
     }
   }, [error]);
 
@@ -65,7 +65,7 @@ const LoginDialog = ({ isOpen, onClose, onSwitchToRegister }) => {
                   id="email"
                   name="email"
                   type="email"
-                  className="pl-10 pr-10" // Added padding for RTL
+                  className="pl-10 pr-10"
                   value={formik.values.email}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}

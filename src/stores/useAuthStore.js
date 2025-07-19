@@ -160,28 +160,24 @@ export const useAuthStore = create((set, get) => ({
   },
 
   logout: async () => {
+    set({ loading: true, error: null });
     try {
-      set({ loading: true });
-      const { data, error } = await supabase.auth.signOut();
-      if (error) {
-        throw new Error(error.message);
-      }
+      let { error } = await supabase.auth.signOut();
 
-      if (data) {
-        set({
-          user: null,
-          loading: false,
-          isAuthenticated: false,
-        });
-
-        toast({
-          title: "تم تسجيل الخروج بنجاح",
-        });
-        console.log(data);
-        return data;
-      }
+      if (error) throw error;
+      set({
+        user: null,
+        loading: false,
+        isAuthenticated: false,
+        error: null,
+      });
+      toast({
+        title: "تم تسجيل الخروج بنجاح",
+        variant: "success",
+      });
+      window.location.reload();
     } catch (error) {
-      console.error(error.message);
+      return get().handleError(error);
     }
   },
 
@@ -465,7 +461,6 @@ export const useAuthStore = create((set, get) => ({
           full_name,
           email,
           university,
-          updated_at: new Date().toISOString(),
         })
         .eq("id", id)
         .select()
@@ -487,6 +482,7 @@ export const useAuthStore = create((set, get) => ({
 
       toast({
         title: "تم تحديث المعلومات بنجاح",
+        variant: "success",
       });
 
       return data;
@@ -731,15 +727,15 @@ export const useAuthStore = create((set, get) => ({
   clearError: () => set({ error: null }),
 }));
 
-supabase.auth.onAuthStateChange((event, session) => {
-  const store = useAuthStore.getState();
+// supabase.auth.onAuthStateChange((event, session) => {
+//   const store = useAuthStore.getState();
 
-  if (event === "SIGNED_IN" && session?.user) {
-    store.getUser();
-  } else if (event === "SIGNED_OUT") {
-    store.setState({
-      isAuthenticated: false,
-      user: null,
-    });
-  }
-});
+//   if (event === "SIGNED_IN" && session?.user) {
+//     store.getUser();
+//   } else if (event === "SIGNED_OUT") {
+//     store.setState({
+//       isAuthenticated: false,
+//       user: null,
+//     });
+//   }
+// });

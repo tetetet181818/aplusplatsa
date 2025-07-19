@@ -12,7 +12,6 @@ import { toast } from "@/components/ui/use-toast";
 const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
-  // const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuthStore((state) => state);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -25,7 +24,7 @@ const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
       navigate(`/notes?search=${searchQuery.trim()}`);
     }
     setSearchQuery("");
-    setIsMenuOpen(false); // Close mobile menu on search
+    setIsMenuOpen(false);
   };
 
   const switchToRegister = () => {
@@ -38,10 +37,10 @@ const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
     setIsLoginDialogOpen(true);
   };
   const handleLogout = async () => {
-    let res = await logout();
+    const res = await logout();
     if (res) {
       toast({
-        title: "تم تسجيل الخروج بنجاح!",
+        title: "تم تسجيل الخروج بنجاح",
       });
     }
   };

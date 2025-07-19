@@ -67,7 +67,6 @@ const NoteDetailPage = () => {
       />
     );
   }
-
   return (
     <motion.div
       className="container py-8 px-4 md:px-6"
@@ -136,7 +135,8 @@ const NoteDetailPage = () => {
             hasPurchased={hasPurchased}
             price={note.price}
             onPurchase={handlePurchase}
-            onEdit={() => navigate(`/add-note?edit=${note.id}`)}
+            loading={loading}
+            onEdit={() => navigate(`/add-note/${note.id}`)}
             onDelete={() => setIsDeleteConfirmOpen(true)}
             onDownload={handleDownloadFile}
             downloadLoading={downloadLoading}
@@ -154,6 +154,7 @@ const NoteDetailPage = () => {
         onConfirm={confirmPurchase}
         noteTitle={note.title}
         notePrice={note.price}
+        noteId
       />
 
       {isOwner && (

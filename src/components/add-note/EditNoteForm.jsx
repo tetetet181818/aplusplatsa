@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormik } from "formik";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,95 +27,40 @@ import {
   Loader,
 } from "lucide-react";
 import {
-  MAX_NOTES_PER_USER,
   MAX_FILE_SIZE_MB,
   MAX_PAGES_PER_NOTE,
   ALLOWED_FILE_TYPES_STRING,
 } from "@/constants/index.js";
-import { addNoteSchema } from "../../utils/validation/fileValidation";
+import { editNoteSchema } from "../../utils/validation/fileValidation";
 import { universityColleges } from "@/constants/index";
 import { useFileStore } from "../../stores/useFileStore";
 import { toast } from "@/components/ui/use-toast";
-import { useParams } from "react-router-dom";
 
-const AddNoteForm = ({ universities, userNotesCount }) => {
-  const { createNote, updateNote, getSingleNote, loading } = useFileStore(
-    (state) => state
-  );
-  const { edit } = useParams();
-
-  const isEditMode = !!edit;
-  const canAddMoreNotes = userNotesCount < MAX_NOTES_PER_USER;
+const EditNoteForm = ({ universities, note }) => {
+  const { updateNote, loading } = useFileStore((state) => state);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [availableColleges, setAvailableColleges] = useState([]);
-  const [note, setNote] = useState(null);
-
-  useEffect(() => {
-    if (isEditMode) {
-      const fetchNote = async () => {
-        console.log(edit);
-        try {
-          const fetchedNote = await getSingleNote({ id: edit });
-          console.log(fetchedNote);
-          if (fetchedNote) {
-            setNote(fetchedNote);
-            setAvailableColleges(
-              universityColleges[fetchedNote.university] || []
-            );
-          } else {
-            toast({
-              title: "خطأ",
-              description: "لم يتم العثور على الملخص.",
-              variant: "destructive",
-            });
-          }
-        } catch (err) {
-          toast({
-            title: "خطأ في جلب الملخص",
-            description: err.message || "حدث خطأ أثناء جلب بيانات الملخص.",
-            variant: "destructive",
-          });
-        }
-      };
-      fetchNote();
-    }
-  }, [edit, getSingleNote]);
 
   const formik = useFormik({
-    initialValues: isEditMode
-      ? {
-          title: note?.title || "",
-          description: note?.description || "",
-          price: note?.price || 0,
-          university: note?.university || "",
-          college: note?.college || "",
-          subject: note?.subject || "",
-          pagesNumber: note?.pages_number || 0,
-          year: note?.year || new Date().getFullYear(),
-          contactMethod: note?.contact_method || "",
-          file: null,
-          imageFile: null,
-          fileName: note?.file_path || "",
-          previewImage: note?.cover_url || "",
-          removeFile: false,
-          removePreviewImage: false,
-        }
-      : {
-          title: "",
-          description: "",
-          price: 0,
-          university: "",
-          college: "",
-          subject: "",
-          pagesNumber: 0,
-          year: new Date().getFullYear(),
-          contactMethod: "",
-          file: null,
-          imageFile: null,
-        },
-    validationSchema: addNoteSchema,
-    enableReinitialize: true,
+    initialValues: {
+      title: note?.title || "",
+      description: note?.description || "",
+      price: note?.price || 0,
+      university: note?.university || "",
+      college: note?.college || "",
+      subject: note?.subject || "",
+      pagesNumber: note?.pagesNumber || 0,
+      year: note?.year || new Date().getFullYear(),
+      contactMethod: note?.contactMethod || "",
+      file: null,
+      imageFile: null,
+      fileName: note?.fileName || "",
+      previewImage: note?.previewImage || "",
+      removeFile: false,
+      removePreviewImage: false,
+    },
+    validationSchema: editNoteSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
         const formData = new FormData();
@@ -134,37 +79,31 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
         if (values.imageFile) {
           formData.append("imageFile", values.imageFile);
         }
-        if (isEditMode) {
-          formData.append("removeFile", values.removeFile);
-          formData.append("removePreviewImage", values.removePreviewImage);
-          await updateNote(edit, formData);
-          toast({
-            title: "تم التحديث بنجاح",
-            description: "تم تحديث الملخص بنجاح.",
-            variant: "default",
-          });
-        } else {
-          console.log("form data", formData);
-          await createNote(formData);
-          resetForm();
-          toast({
-            title: "تم إنشاء الملخص بنجاح",
-            description: "سيتم مراجعة الملخص من قبل الإدارة قبل نشره.",
-            variant: "success",
-          });
-        }
+        formData.append("removeFile", values.removeFile);
+        formData.append("removePreviewImage", values.removePreviewImage);
+
+        await updateNote(note.id, formData);
+        toast({
+          title: "تم التحديث بنجاح",
+          description: "تم تحديث الملخص بنجاح.",
+          variant: "default",
+        });
       } catch (err) {
         toast({
-          title: isEditMode ? "خطأ في تحديث الملخص" : "خطأ في إضافة الملخص",
-          description:
-            err.message ||
-            `حدث خطأ أثناء ${isEditMode ? "تحديث" : "إضافة"} الملخص.`,
+          title: "خطأ في تحديث الملخص",
+          description: err.message || "حدث خطأ أثناء تحديث الملخص.",
           variant: "destructive",
         });
-        console.error(`Error ${isEditMode ? "updating" : "adding"} note:`, err);
+        console.error("Error updating note:", err);
       }
     },
   });
+
+  useEffect(() => {
+    if (note?.university) {
+      setAvailableColleges(universityColleges[note.university] || []);
+    }
+  }, [note]);
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -173,12 +112,12 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
     if (e.target.name === "file") {
       setIsUploadingFile(true);
       formik.setFieldValue("file", file);
-      if (isEditMode) formik.setFieldValue("removeFile", false);
+      formik.setFieldValue("removeFile", false);
       setIsUploadingFile(false);
     } else if (e.target.name === "imageFile") {
       setIsUploadingImage(true);
       formik.setFieldValue("imageFile", file);
-      if (isEditMode) formik.setFieldValue("removePreviewImage", false);
+      formik.setFieldValue("removePreviewImage", false);
       setIsUploadingImage(false);
     }
   };
@@ -187,7 +126,6 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
     formik.setFieldValue(name, value);
     if (name === "university") {
       formik.setFieldValue("college", "");
-      setAvailableColleges(universityColleges[value] || []);
     }
   };
 
@@ -200,23 +138,10 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{isEditMode ? "تعديل الملخص" : "معلومات الملخص"}</CardTitle>
-        <CardDescription>
-          {isEditMode
-            ? "قم بتعديل معلومات الملخص الحالي."
-            : "أدخل معلومات الملخص الذي ترغب في بيعه."}
-        </CardDescription>
+        <CardTitle>تعديل الملخص</CardTitle>
+        <CardDescription>قم بتعديل معلومات الملخص الحالي.</CardDescription>
       </CardHeader>
       <CardContent>
-        {!isEditMode && !canAddMoreNotes && (
-          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-300 rounded-md text-yellow-700 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            <span>
-              لقد وصلت إلى الحد الأقصى لعدد الملخصات المسموح به (
-              {MAX_NOTES_PER_USER} ملخص). لا يمكنك إضافة المزيد.
-            </span>
-          </div>
-        )}
         <form onSubmit={formik.handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -229,7 +154,6 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   placeholder="أدخل عنوان الملخص"
-                  disabled={!isEditMode && !canAddMoreNotes}
                 />
                 {formik.touched.title && formik.errors.title && (
                   <p className="text-sm text-red-500">{formik.errors.title}</p>
@@ -247,7 +171,6 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                   placeholder="أدخل سعر الملخص"
                   min="0"
                   step="0.01"
-                  disabled={!isEditMode && !canAddMoreNotes}
                 />
                 {formik.touched.price && formik.errors.price && (
                   <p className="text-sm text-red-500">{formik.errors.price}</p>
@@ -265,7 +188,6 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                 onBlur={formik.handleBlur}
                 placeholder="أدخل وصفاً تفصيلياً للملخص"
                 rows={4}
-                disabled={!isEditMode && !canAddMoreNotes}
               />
               {formik.touched.description && formik.errors.description && (
                 <p className="text-sm text-red-500">
@@ -281,7 +203,6 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                   name="university"
                   value={formik.values.university}
                   onValueChange={handleUniversityChange}
-                  disabled={!isEditMode && !canAddMoreNotes}
                 >
                   <SelectTrigger
                     id="university"
@@ -318,9 +239,7 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                     handleSelectChange("college", value)
                   }
                   disabled={
-                    !formik.values.university ||
-                    availableColleges.length === 0 ||
-                    (!isEditMode && !canAddMoreNotes)
+                    !formik.values.university || availableColleges.length === 0
                   }
                 >
                   <SelectTrigger id="college">
@@ -352,7 +271,6 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   placeholder="أدخل اسم المادة"
-                  disabled={!isEditMode && !canAddMoreNotes}
                 />
                 {formik.touched.subject && formik.errors.subject && (
                   <p className="text-sm text-red-500">
@@ -374,7 +292,6 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                   placeholder="أدخل عدد الصفحات"
                   min="1"
                   max={MAX_PAGES_PER_NOTE}
-                  disabled={!isEditMode && !canAddMoreNotes}
                 />
                 {formik.touched.pagesNumber && formik.errors.pagesNumber && (
                   <p className="text-sm text-red-500">
@@ -394,7 +311,6 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                   placeholder="أدخل السنة"
                   min="2000"
                   max={new Date().getFullYear() + 5}
-                  disabled={!isEditMode && !canAddMoreNotes}
                 />
                 {formik.touched.year && formik.errors.year && (
                   <p className="text-sm text-red-500">{formik.errors.year}</p>
@@ -413,7 +329,6 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 placeholder="مثال: 05xxxxxxx أو example@mail.com"
-                disabled={!isEditMode && !canAddMoreNotes}
               />
               {formik.touched.contactMethod && formik.errors.contactMethod && (
                 <p className="text-sm text-red-500">
@@ -428,7 +343,7 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
             <div className="space-y-2">
               <Label htmlFor="file">
                 ملف الملخص ({ALLOWED_FILE_TYPES_STRING}، الحد الأقصى:{" "}
-                {MAX_FILE_SIZE_MB}MB) {isEditMode ? "" : "*"}
+                {MAX_FILE_SIZE_MB}MB)
               </Label>
               <Input
                 id="file"
@@ -436,11 +351,7 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                 type="file"
                 onChange={handleFileChange}
                 accept={ALLOWED_FILE_TYPES_STRING}
-                disabled={
-                  (!isEditMode && !canAddMoreNotes) ||
-                  formik.values.removeFile ||
-                  isUploadingFile
-                }
+                disabled={isUploadingFile}
                 className={isUploadingFile ? "opacity-50" : ""}
               />
               {isUploadingFile && (
@@ -448,7 +359,8 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                   <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
                 </div>
               )}
-              {formik.values.file && (
+
+              {formik.values.file ? (
                 <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex items-center">
                   <FileText className="h-4 w-4 mr-2 text-primary" />
                   <span>
@@ -456,35 +368,31 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                     {(formik.values.file.size / 1024 / 1024).toFixed(2)} MB)
                   </span>
                 </div>
-              )}
-              {isEditMode &&
-                formik.values.fileName &&
-                !formik.values.file &&
-                !formik.values.removeFile && (
-                  <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex items-center justify-between p-2 border rounded-md">
-                    <div className="flex items-center">
-                      <FileText className="h-4 w-4 mr-2 text-primary" />
-                      <span>الملف الحالي: {formik.values.fileName}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Checkbox
-                        id="removeFile"
-                        name="removeFile"
-                        checked={formik.values.removeFile}
-                        onCheckedChange={(checked) =>
-                          formik.setFieldValue("removeFile", checked)
-                        }
-                        className="ml-2"
-                      />
-                      <Label
-                        htmlFor="removeFile"
-                        className="text-xs text-red-500 cursor-pointer"
-                      >
-                        حذف الملف الحالي (يتطلب رفع ملف جديد)
-                      </Label>
-                    </div>
+              ) : formik.values.fileName && !formik.values.removeFile ? (
+                <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex items-center justify-between p-2 border rounded-md">
+                  <div className="flex items-center">
+                    <FileText className="h-4 w-4 mr-2 text-primary" />
+                    <span>الملف الحالي: {formik.values.fileName}</span>
                   </div>
-                )}
+                  <div className="flex items-center">
+                    <Checkbox
+                      id="removeFile"
+                      name="removeFile"
+                      checked={formik.values.removeFile}
+                      onCheckedChange={(checked) =>
+                        formik.setFieldValue("removeFile", checked)
+                      }
+                      className="ml-2"
+                    />
+                    <Label
+                      htmlFor="removeFile"
+                      className="text-xs text-red-500 cursor-pointer"
+                    >
+                      حذف الملف الحالي (يتطلب رفع ملف جديد)
+                    </Label>
+                  </div>
+                </div>
+              ) : null}
               {formik.touched.file && formik.errors.file && (
                 <p className="text-sm text-red-500">{formik.errors.file}</p>
               )}
@@ -500,11 +408,7 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                 type="file"
                 onChange={handleFileChange}
                 accept="image/jpeg, image/png"
-                disabled={
-                  (!isEditMode && !canAddMoreNotes) ||
-                  formik.values.removePreviewImage ||
-                  isUploadingImage
-                }
+                disabled={isUploadingImage}
                 className={isUploadingImage ? "opacity-50" : ""}
               />
               {isUploadingImage && (
@@ -512,7 +416,7 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                   <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
                 </div>
               )}
-              {formik.values.imageFile && (
+              {formik.values.imageFile ? (
                 <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex items-center">
                   <ImageUp className="h-4 w-4 mr-2 text-primary" />
                   <span>
@@ -521,45 +425,42 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                     MB)
                   </span>
                 </div>
-              )}
-              {isEditMode &&
-                formik.values.previewImage &&
-                !formik.values.imageFile &&
-                !formik.values.removePreviewImage && (
-                  <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex items-center justify-between p-2 border rounded-md">
-                    <div className="flex items-center">
-                      <ImageUp className="h-4 w-4 mr-2 text-primary" />
-                      <span>
-                        صورة الغلاف الحالية:{" "}
-                        <a
-                          href={formik.values.previewImage}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline"
-                        >
-                          عرض
-                        </a>
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <Checkbox
-                        id="removePreviewImage"
-                        name="removePreviewImage"
-                        checked={formik.values.removePreviewImage}
-                        onCheckedChange={(checked) =>
-                          formik.setFieldValue("removePreviewImage", checked)
-                        }
-                        className="ml-2"
-                      />
-                      <Label
-                        htmlFor="removePreviewImage"
-                        className="text-xs text-red-500 cursor-pointer"
+              ) : formik.values.previewImage &&
+                !formik.values.removePreviewImage ? (
+                <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex items-center justify-between p-2 border rounded-md">
+                  <div className="flex items-center">
+                    <ImageUp className="h-4 w-4 mr-2 text-primary" />
+                    <span>
+                      صورة الغلاف الحالية:{" "}
+                      <a
+                        href={formik.values.previewImage}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline"
                       >
-                        حذف الصورة الحالية
-                      </Label>
-                    </div>
+                        عرض
+                      </a>
+                    </span>
                   </div>
-                )}
+                  <div className="flex items-center">
+                    <Checkbox
+                      id="removePreviewImage"
+                      name="removePreviewImage"
+                      checked={formik.values.removePreviewImage}
+                      onCheckedChange={(checked) =>
+                        formik.setFieldValue("removePreviewImage", checked)
+                      }
+                      className="ml-2"
+                    />
+                    <Label
+                      htmlFor="removePreviewImage"
+                      className="text-xs text-red-500 cursor-pointer"
+                    >
+                      حذف الصورة الحالية
+                    </Label>
+                  </div>
+                </div>
+              ) : null}
               {formik.touched.imageFile && formik.errors.imageFile && (
                 <p className="text-sm text-red-500">
                   {formik.errors.imageFile}
@@ -575,19 +476,17 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
             <Button
               type="submit"
               className="flex items-center gap-2"
-              disabled={loading || (!isEditMode && !canAddMoreNotes)}
+              disabled={loading}
             >
               {loading ? (
                 <>
                   <Loader className="size-5 animate-spin" />
-                  <span>
-                    {isEditMode ? "جاري التحديث..." : "جاري التحميل..."}
-                  </span>
+                  <span>جاري التحديث...</span>
                 </>
               ) : (
                 <>
                   <Upload className="size-4" />
-                  <span>{isEditMode ? "تحديث الملخص" : "إضافة الملخص"}</span>
+                  <span> تحديث الملخص</span>
                 </>
               )}
             </Button>
@@ -598,4 +497,4 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
   );
 };
 
-export default AddNoteForm;
+export default EditNoteForm;

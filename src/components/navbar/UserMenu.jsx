@@ -23,10 +23,13 @@ export default function UserMenu({ handleLogout, user }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-          <Avatar className="h-10 w-10 border-2 border-transparent hover:border-primary transition-colors">
-            <AvatarImage src={avatar} alt={user.name} />
-            <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-primary">
-              {user.full_name?.charAt(0).toUpperCase()}
+          <Avatar className="h-8 w-8">
+            <AvatarImage
+              src={`https://api.dicebear.com/6.x/initials/svg?seed=${user?.full_name}`}
+              alt={user?.full_name}
+            />
+            <AvatarFallback>
+              {user?.full_name?.charAt(0)?.toUpperCase() || "?"}
             </AvatarFallback>
           </Avatar>
         </Button>

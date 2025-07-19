@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +24,7 @@ const SellerProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [sellerNotes, setSellerNotes] = useState([]);
 
   const {
     getUserById,
@@ -40,141 +41,82 @@ const SellerProfilePage = () => {
     clearError: clearNotesError,
   } = useFileStore();
 
-  const [sellerNotes, setSellerNotes] = useState([]);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRetrying, setIsRetrying] = useState(false);
-
-  const fetchSellerData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      clearSellerError();
-      clearNotesError();
-
-      const sellerData = await getUserById(userId);
-      if (!sellerData) {
-        throw new Error("لم يتم العثور على البائع");
-      }
-      return sellerData;
-    } catch (err) {
-      throw err;
-    }
-  }, [userId, getUserById, clearSellerError, clearNotesError]);
-
-  const fetchSellerNotes = useCallback(
-    async (sellerId) => {
-      try {
-        const notes = await getSellerNotes(sellerId);
-        return notes || [];
-      } catch (err) {
-        throw err;
-      }
-    },
-    [getSellerNotes]
-  );
-
-  const loadData = useCallback(async () => {
-    try {
-      const sellerData = await fetchSellerData();
-      const notes = await fetchSellerNotes(sellerData.id);
-      setSellerNotes(notes);
-    } catch (err) {
-      console.error("Error loading data:", err);
-      setError(err.message || "حدث خطأ أثناء جلب البيانات");
-      toast({
-        title: "خطأ",
-        description: err.message || "حدث خطأ أثناء جلب البيانات",
-        variant: "destructive",
-      });
-
-      if (err.message.includes("لم يتم العثور")) {
-        setTimeout(() => navigate("/notes"), 2000);
-      }
-    } finally {
-      setIsLoading(false);
-      setIsRetrying(false);
-    }
-  }, [fetchSellerData, fetchSellerNotes, toast, navigate]);
-
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let getNotes = async () => {
+      let res = await getSellerNotes({ sellerId: userId });
+      console.log(res);
+      if (res) {
+        setSellerNotes(res);
+      }
+    };
+    getNotes();
+  }, []);
 
-  useEffect(() => {
-    if (sellerError || notesError) {
-      setError(sellerError || notesError);
-      toast({
-        title: "خطأ",
-        description: sellerError || notesError,
-        variant: "destructive",
-      });
-    }
-  }, [sellerError, notesError, toast]);
-
-  const handleRetry = () => {
-    setIsRetrying(true);
-    loadData();
-  };
-
-  if (isLoading || sellerLoading || isRetrying) {
-    return (
-      <div className="container py-12 px-4 md:px-6 flex flex-col items-center justify-center min-h-[60vh]">
-        <LoadingSpinner
-          message={
-            isRetrying
-              ? "جاري إعادة المحاولة..."
-              : "جاري تحميل بيانات البائع..."
-          }
-        />
-      </div>
-    );
+  if (sellerLoading || notesLoading) {
+    return <LoadingSpinner message="جاري التحميل...." />;
   }
-
-  if (error) {
-    return (
-      <div className="container py-12 px-4 md:px-6 text-center min-h-[60vh] flex flex-col items-center justify-center">
-        <div className="max-w-md">
-          <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">حدث خطأ</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <div className="flex justify-center gap-4">
-            <Button
-              onClick={handleRetry}
-              variant="outline"
-              disabled={isRetrying}
+  if (!sellerLoading) {
+    if (!seller) {
+      return (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="min-h-[70vh] flex items-center justify-center px-4"
+        >
+          <Card className="w-full max-w-md p-8 text-center shadow-lg rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
             >
-              {isRetrying ? (
-                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              إعادة المحاولة
-            </Button>
-            <Link to="/notes">
-              <Button>العودة إلى الملخصات</Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+              <div className="relative w-24 h-24 mx-auto mb-6">
+                <div className="absolute inset-0 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900 dark:to-red-800 rounded-full opacity-80"></div>
+                <UserCircle className="relative z-10 h-full w-full text-red-500 dark:text-red-400 p-4" />
+              </div>
+            </motion.div>
 
-  if (!seller) {
-    return (
-      <div className="container py-12 px-4 md:px-6 text-center min-h-[60vh] flex flex-col items-center justify-center">
-        <div className="max-w-md">
-          <UserCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">لم يتم العثور على البائع</h2>
-          <p className="text-gray-600 mb-6">
-            عفواً، لا يمكننا العثور على معلومات البائع المطلوب.
-          </p>
-          <Link to="/notes">
-            <Button variant="outline">العودة إلى الملخصات</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">
+              البائع غير موجود
+            </h1>
 
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              عذراً، لا يمكننا العثور على البائع الذي تبحث عنه. قد يكون الحساب
+              غير موجود أو تم حذفه.
+            </p>
+
+            <div className="flex flex-col sm:flex-row justify-center gap-3">
+              <Link to="/notes" className="w-full sm:w-auto">
+                <Button className="w-full" variant="outline">
+                  تصفح الملخصات المتاحة
+                </Button>
+              </Link>
+              <Button
+                onClick={() => window.location.reload()}
+                variant="ghost"
+                className="w-full sm:w-auto bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                إعادة المحاولة
+              </Button>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                إذا كنت تعتقد أن هذا خطأ، يرجى التواصل مع الدعم الفني
+              </p>
+              <Button
+                variant="link"
+                className="text-blue-600 dark:text-blue-400 mt-2"
+              >
+                تواصل معنا
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      );
+    }
+  }
   return (
     <div className="container py-12 px-4 md:px-6">
       {/* Seller Profile Section */}
@@ -188,22 +130,15 @@ const SellerProfilePage = () => {
           <CardContent className="p-6 pt-0 -mt-16">
             <div className="flex flex-col items-center md:flex-row md:items-end md:space-x-6">
               <Avatar className="h-32 w-32 border-4 border-background shadow-md">
-                <AvatarImage
-                  src={seller.avatar || ""}
-                  alt={seller.full_name}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
                 <AvatarFallback className="text-4xl bg-gray-200">
                   {seller?.full_name?.charAt(0) || "?"}
                 </AvatarFallback>
               </Avatar>
               <div className="mt-4 md:mt-0 text-center md:text-left">
                 <h1 className="text-3xl font-bold">
-                  {seller.full_name || "بائع غير معروف"}
+                  {seller?.full_name || "بائع غير معروف"}
                 </h1>
-                {seller.university && (
+                {seller?.university && (
                   <p className="text-gray-600 flex items-center justify-center md:justify-start mt-2">
                     <School className="ml-2 h-5 w-5 text-primary" />
                     {seller.university}

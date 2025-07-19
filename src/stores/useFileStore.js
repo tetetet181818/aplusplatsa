@@ -21,19 +21,18 @@ export const useFileStore = create((set, get) => ({
   totalFiles: 0,
   downloadLoading: false,
 
-  createNote: async ({
-    title,
-    description,
-    price,
-    university,
-    college,
-    subject,
-    pagesNumber,
-    year,
-    contactMethod,
-    file,
-    imageFile,
-  }) => {
+  createNote: async (formData) => {
+    const title = formData.get("title");
+    const description = formData.get("description");
+    const price = Number(formData.get("price"));
+    const university = formData.get("university");
+    const college = formData.get("college");
+    const subject = formData.get("subject");
+    const pagesNumber = Number(formData.get("pagesNumber"));
+    const year = Number(formData.get("year"));
+    const contactMethod = formData.get("contactMethod");
+    const file = formData.get("file");
+    const imageFile = formData.get("imageFile");
     try {
       set({ loading: true, error: null });
 
@@ -98,8 +97,8 @@ export const useFileStore = create((set, get) => ({
             university,
             college,
             subject,
-            pages_number: Number(pagesNumber) || 0,
-            year: Number(year) || new Date().getFullYear(),
+            pages_number: pagesNumber || 0,
+            year: year || new Date().getFullYear(),
             contact_method: contactMethod,
             created_at: new Date().toISOString(),
             downloads: 0,
@@ -124,7 +123,7 @@ export const useFileStore = create((set, get) => ({
       toast({
         title: "تم إنشاء الملخص بنجاح",
         description: "سيتم مراجعة الملخص من قبل الإدارة قبل نشره.",
-        variant: "default",
+        variant: "success",
       });
 
       set({ loading: false, error: null });
@@ -246,7 +245,7 @@ export const useFileStore = create((set, get) => ({
     }
   },
 
-  getSingleNote: async (id) => {
+  getSingleNote: async ({ id }) => {
     try {
       set({ loading: true, error: null });
 
@@ -296,7 +295,7 @@ export const useFileStore = create((set, get) => ({
     }
   },
 
-  deleteNote: async (id) => {
+  deleteNote: async ({ id }) => {
     try {
       set({ loading: true, error: null });
 
@@ -721,6 +720,196 @@ export const useFileStore = create((set, get) => ({
       return [];
     }
   },
+  updateNote: async (noteId, formData) => {
+    try {
+      set({ loading: true, error: null });
 
+      // Get authenticated user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("المستخدم غير مسجل الدخول");
+      }
+
+      // Extract values from FormData
+      const title = formData.get("title");
+      const description = formData.get("description");
+      const price = Number(formData.get("price"));
+      const university = formData.get("university");
+      const college = formData.get("college");
+      const subject = formData.get("subject");
+      const pagesNumber = Number(formData.get("pagesNumber"));
+      const year = Number(formData.get("year"));
+      const contactMethod = formData.get("contactMethod");
+      const file = formData.get("file");
+      const imageFile = formData.get("imageFile");
+      const removeFile = formData.get("removeFile") === "true";
+      const removePreviewImage = formData.get("removePreviewImage") === "true";
+
+      // Fetch existing note to verify ownership and get current file paths
+      const { data: existingNote, error: fetchError } = await supabase
+        .from("files")
+        .select("owner_id, file_path, file_url, cover_url")
+        .eq("id", noteId)
+        .single();
+
+      if (fetchError || !existingNote) {
+        throw new Error(
+          "الملخص غير موجود أو حدث خطأ في الجلب: " +
+            (fetchError?.message || "خطأ غير معروف")
+        );
+      }
+
+      if (existingNote.owner_id !== user.id) {
+        throw new Error("غير مصرح لك بتعديل هذا الملخص");
+      }
+
+      // Initialize update data
+      const updateData = {
+        title,
+        description,
+        price,
+        university,
+        college,
+        subject,
+        pages_number: pagesNumber,
+        year,
+        contact_method: contactMethod,
+      };
+
+      // Handle PDF file update
+      let pdfFilename = existingNote.file_path;
+      let fileUrl = existingNote.file_url;
+      if (file && file.size > 0) {
+        const pdfExtension = file.name.split(".").pop()?.toLowerCase();
+        pdfFilename = `pdfs/${user.id}_${Date.now()}.${pdfExtension}`;
+        const { error: uploadError } = await supabase.storage
+          .from(BUCKET_NAME)
+          .upload(pdfFilename, file);
+
+        if (uploadError) {
+          throw new Error("فشل في رفع ملف PDF: " + uploadError.message);
+        }
+
+        const { data: pdfUrlData } = supabase.storage
+          .from(BUCKET_NAME)
+          .getPublicUrl(pdfFilename);
+        fileUrl = pdfUrlData.publicUrl;
+        updateData.file_url = fileUrl;
+        updateData.file_path = pdfFilename;
+      } else if (removeFile) {
+        throw new Error("يجب رفع ملف PDF جديد عند اختيار حذف الملف الحالي");
+      }
+
+      // Handle image file update
+      let imageUrl = existingNote.cover_url;
+      if (imageFile && imageFile.size > 0) {
+        const imgFilename = `images/${user.id}_${Date.now()}.${imageFile.name
+          .split(".")
+          .pop()
+          ?.toLowerCase()}`;
+        const { error: imageUploadError } = await supabase.storage
+          .from(BUCKET_NAME)
+          .upload(imgFilename, imageFile);
+
+        if (imageUploadError) {
+          // Clean up new PDF if uploaded
+          if (file && file.size > 0) {
+            await supabase.storage.from(BUCKET_NAME).remove([pdfFilename]);
+          }
+          throw new Error("فشل في رفع الصورة: " + imageUploadError.message);
+        }
+
+        const { data: imageUrlData } = supabase.storage
+          .from(BUCKET_NAME)
+          .getPublicUrl(imgFilename);
+        imageUrl = imageUrlData.publicUrl;
+        updateData.cover_url = imageUrl;
+      } else if (removePreviewImage) {
+        updateData.cover_url = DEFAULT_IMAGE_URL;
+      }
+
+      // Update note in database
+      const { data: updatedNote, error: updateError } = await supabase
+        .from("files")
+        .update(updateData)
+        .eq("id", noteId)
+        .select()
+        .single();
+
+      if (updateError) {
+        // Clean up uploaded files if update fails
+        if (file && file.size > 0) {
+          await supabase.storage.from(BUCKET_NAME).remove([pdfFilename]);
+        }
+        if (imageFile && imageFile.size > 0) {
+          await supabase.storage
+            .from(BUCKET_NAME)
+            .remove([
+              `images/${user.id}_${Date.now()}.${imageFile.name
+                .split(".")
+                .pop()}`,
+            ]);
+        }
+        throw new Error("فشل في تحديث بيانات الملخص: " + updateError.message);
+      }
+
+      // Clean up old files if new ones were uploaded
+      if (file && file.size > 0 && existingNote.file_path) {
+        await supabase.storage
+          .from(BUCKET_NAME)
+          .remove([existingNote.file_path]);
+      }
+      if (
+        imageFile &&
+        imageFile.size > 0 &&
+        existingNote.cover_url &&
+        existingNote.cover_url !== DEFAULT_IMAGE_URL
+      ) {
+        const oldImagePath = existingNote.cover_url.split("/").pop();
+        await supabase.storage
+          .from(BUCKET_NAME)
+          .remove([`images/${oldImagePath}`]);
+      }
+
+      // Insert notification
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert({
+          user_id: user.id,
+          title: "تم تحديث الملخص",
+          body: `تم تحديث الملخص بعنوان "${title}" بنجاح`,
+          type: "note",
+        });
+
+      if (notificationError) {
+        console.warn(
+          "Failed to insert notification:",
+          notificationError.message
+        );
+      }
+
+      toast({
+        title: "تم تحديث الملخص بنجاح",
+        description: "تم تحديث بيانات الملخص بنجاح.",
+        variant: "success",
+      });
+
+      set({ loading: false, error: null });
+      return updatedNote;
+    } catch (err) {
+      console.error("Error in updateNote:", err);
+      toast({
+        title: "حدث خطأ",
+        description: err.message || "حدث خطأ غير متوقع أثناء تحديث الملخص",
+        variant: "destructive",
+      });
+      set({ loading: false, error: err.message });
+      return null;
+    }
+  },
   clearError: () => set({ error: null }),
 }));

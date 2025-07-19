@@ -18,7 +18,6 @@ const useNoteDetail = () => {
     removeNoteFromLikeList,
     likeLoading,
   } = useAuthStore((state) => state);
-
   const {
     getSingleNote,
     note,
@@ -33,12 +32,12 @@ const useNoteDetail = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [error, setError] = useState(null);
-  const [owner, setOwner] = useState(seller);
+  const [owner, setOwner] = useState();
 
   const fetchNote = useCallback(async () => {
     if (!id) return setError("معرف الملخص غير صالح");
     try {
-      await getSingleNote(id);
+      await getSingleNote({ id });
       setError(null);
     } catch (err) {
       console.error("Failed to fetch note:", err);
@@ -49,13 +48,15 @@ const useNoteDetail = () => {
     if (!id) return;
     fetchNote();
   }, [fetchNote]);
+
   useEffect(() => {
     if (!note?.owner_id) return;
     const handleGetUser = async () => {
       let res = await getUserById({ id: note?.owner_id });
+      setOwner(res);
     };
     handleGetUser();
-  }, [note?.owner_id, getUserById]);
+  }, [getUserById]);
 
   const isOwner = currentUser?.id === note?.owner_id;
   const hasPurchased = note?.purchased_by?.includes(currentUser?.id);
@@ -130,7 +131,7 @@ const useNoteDetail = () => {
       console.error("Download error:", err);
     }
   }, [note?.file_path, downloadNote]);
-  console.log();
+
   return {
     id,
     note,

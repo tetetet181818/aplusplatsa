@@ -48,6 +48,10 @@ function App() {
             path="/add-note"
             element={<AddNotePage isAuthenticated={isAuthenticated} />}
           />
+          <Route
+            path="/add-note/:edit"
+            element={<AddNotePage isAuthenticated={isAuthenticated} />}
+          />
           <Route path="/profile" element={<UserDashboardPage />} />
           <Route path="/seller/:userId" element={<SellerProfilePage />} />
           <Route path="/faq" element={<FAQPage />} />

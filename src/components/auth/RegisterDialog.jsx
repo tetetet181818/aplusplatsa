@@ -57,9 +57,7 @@ const RegisterDialog = ({ isOpen, onClose, onSwitchToLogin }) => {
     },
     validationSchema: registerSchema,
     onSubmit: async (values, { resetForm }) => {
-      console.log(values);
       const user = await register(values);
-      console.log(user);
       if (user) {
         toast({ title: "تم إنشاء الحساب بنجاح" });
         resetForm();

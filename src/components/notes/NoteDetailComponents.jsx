@@ -29,11 +29,7 @@ import {
   CalendarDays,
   BookOpen,
   Layers,
-  Tag,
   FileText,
-  MessageSquare,
-  ThumbsUp,
-  ThumbsDown,
   Mail,
   Phone,
   Loader2,
@@ -300,6 +296,7 @@ export const NoteActions = ({
   isAuthenticated,
   contactMethod,
   downloadLoading,
+  loading,
 }) => {
   const handleAction = (action) => {
     try {
@@ -331,8 +328,18 @@ export const NoteActions = ({
               onClick={() => handleAction(onDelete)}
               variant="destructive"
               className="w-full flex items-center gap-2"
+              disabled={loading}
             >
-              <Trash className="h-4 w-4" /> حذف الملخص
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  جاري الحذف...
+                </>
+              ) : (
+                <>
+                  <Trash className="h-4 w-4" /> حذف الملخص
+                </>
+              )}
             </Button>
             <Button
               onClick={() => handleAction(onDownload)}
