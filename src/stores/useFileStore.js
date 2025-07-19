@@ -656,9 +656,9 @@ export const useFileStore = create((set, get) => ({
           amount: parseInt(amount) * 100,
           currency: "SAR",
           description: `شراء ملخص رقم ${noteId}`,
-          callback_url: `http://localhost:5173/payment-success?noteId=${noteId}&userId=${userId}`,
-          success_url: `http://localhost:5173/payment-success?noteId=${noteId}&userId=${userId}`,
-          back_url: `http://localhost:5173/checkout?noteId=${noteId}`,
+          callback_url: `https://aplusplatformsa.com/payment-success?noteId=${noteId}&userId=${userId}`,
+          success_url: `https://aplusplatformsa.com/payment-success?noteId=${noteId}&userId=${userId}`,
+          back_url: `https://aplusplatformsa.com/checkout?noteId=${noteId}`,
         },
         {
           headers: {
