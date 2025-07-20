@@ -1,14 +1,4 @@
-import {
-  DollarSign,
-  TrendingUp,
-  CreditCard,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Search,
-  Calendar,
-} from "lucide-react";
-import StatCard from "@/components/ui/StatCard";
+import { ChevronLeft, ChevronRight, Loader2, Search } from "lucide-react";
 import SectionHeader from "@/components/ui/SectionHeader";
 import {
   Card,
@@ -28,7 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSalesStore } from "@/stores/useSalesStore";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import formatArabicDate from "@/config/formateTime";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,21 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const StatCardSkeleton = () => (
-  <Card className="animate-pulse">
-    <CardContent className="p-6">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-6 w-6 rounded-full" />
-        <Skeleton className="h-4 w-24 rounded" />
-      </div>
-      <div className="mt-4 space-y-2">
-        <Skeleton className="h-8 w-32 rounded" />
-        <Skeleton className="h-4 w-20 rounded" />
-      </div>
-    </CardContent>
-  </Card>
-);
 
 const statusOptions = [
   { value: "all", label: "جميع الحالات" },
@@ -84,17 +59,27 @@ export default function SalesContent() {
   const [dateFrom, setDateFrom] = useState(null);
   const [dateTo, setDateTo] = useState(null);
   const [searchTimeout, setSearchTimeout] = useState(null);
-  const totalPages = Math.ceil(totalSales / itemsPerPage);
 
+  // Memoized total pages calculation
+  const totalPages = useMemo(
+    () => Math.ceil(totalSales / itemsPerPage),
+    [totalSales, itemsPerPage]
+  );
+
+  // Memoized filters object
+  const filters = useMemo(
+    () => ({
+      search: searchQuery,
+      ...(statusFilter !== "all" && { status: statusFilter }),
+      ...(dateFrom && { dateFrom: dateFrom.toISOString() }),
+      ...(dateTo && { dateTo: dateTo.toISOString() }),
+    }),
+    [searchQuery, statusFilter, dateFrom, dateTo]
+  );
+
+  // Fetch data with memoized dependencies
   const fetchData = useCallback(async () => {
     try {
-      const filters = {
-        search: searchQuery,
-        ...(statusFilter !== "all" && { status: statusFilter }),
-        ...(dateFrom && { dateFrom: dateFrom.toISOString() }),
-        ...(dateTo && { dateTo: dateTo.toISOString() }),
-      };
-
       await Promise.all([
         getSalesStatistics(),
         getSales(currentPage, itemsPerPage, filters),
@@ -106,16 +91,7 @@ export default function SalesContent() {
         variant: "destructive",
       });
     }
-  }, [
-    currentPage,
-    itemsPerPage,
-    searchQuery,
-    statusFilter,
-    dateFrom,
-    dateTo,
-    getSales,
-    getSalesStatistics,
-  ]);
+  }, [currentPage, itemsPerPage, filters, getSales, getSalesStatistics, toast]);
 
   useEffect(() => {
     fetchData();
@@ -127,140 +103,264 @@ export default function SalesContent() {
       });
       clearError();
     }
-  }, [fetchData, error, clearError]);
+  }, [fetchData, error, clearError, toast]);
 
+  // Memoized handlePageChange
   const handlePageChange = useCallback(
     (newPage) => {
       if (newPage > 0 && newPage <= totalPages && !loading) {
         setCurrentPage(newPage);
-        getSales(newPage, itemsPerPage, {
-          search: searchQuery,
-          ...(statusFilter !== "all" && { status: statusFilter }),
-          ...(dateFrom && { dateFrom: dateFrom.toISOString() }),
-          ...(dateTo && { dateTo: dateTo.toISOString() }),
-        });
       }
     },
-    [
-      totalPages,
-      loading,
-      setCurrentPage,
-      getSales,
-      itemsPerPage,
-      searchQuery,
-      statusFilter,
-      dateFrom,
-      dateTo,
-    ]
+    [totalPages, loading, setCurrentPage]
   );
 
-  const handleSearchInputChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
+  // Memoized search handler
+  const handleSearchInputChange = useCallback(
+    (e) => {
+      const query = e.target.value;
+      setSearchQuery(query);
 
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+
+      setSearchTimeout(
+        setTimeout(() => {
+          setCurrentPage(1);
+        }, 300)
+      );
+    },
+    [searchTimeout, setCurrentPage]
+  );
+
+  // Memoized status filter handler
+  const handleStatusFilterChange = useCallback(
+    (value) => {
+      setStatusFilter(value);
+      setCurrentPage(1);
+    },
+    [setCurrentPage]
+  );
+
+  // Memoized items per page handler
+  const handleItemsPerPageChange = useCallback(
+    (value) => {
+      const newItemsPerPage = Number(value);
+      setItemsPerPage(newItemsPerPage);
+      setCurrentPage(1);
+    },
+    [setItemsPerPage, setCurrentPage]
+  );
+
+  // Memoized columns configuration
+  const columns = useMemo(
+    () => [
+      {
+        header: "الدورة",
+        accessor: "files.title",
+        label: "الدورة",
+        customRender: (value) => value || "غير محدد",
+      },
+      {
+        header: "الطالب",
+        accessor: "users.full_name",
+        label: "الطالب",
+        customRender: (value) => value || "غير محدد",
+      },
+      {
+        header: "رقم العملية",
+        accessor: "invoice_id",
+        label: "رقم العملية",
+        customRender: (value) => value || "غير متوفر",
+      },
+      {
+        header: "رساله الدفع",
+        accessor: "message",
+        label: "رساله الدفع",
+        customRender: (value) => value || "لا توجد رسالة",
+      },
+      {
+        header: "المبلغ",
+        accessor: "amount",
+        label: "المبلغ",
+        customRender: (amount) => `${(amount || 0).toLocaleString()} ر.س`,
+      },
+      {
+        header: "التاريخ",
+        accessor: "created_at",
+        label: "التاريخ",
+        customRender: (date) =>
+          date ? formatArabicDate(date, { hijri: true }) : "غير محدد",
+      },
+      {
+        header: "الحالة",
+        accessor: "status",
+        label: "الحالة",
+        customRender: (status) => {
+          const variantMap = {
+            completed: "default",
+            pending: "secondary",
+            failed: "destructive",
+          };
+          const labelMap = {
+            completed: "مكتمل",
+            pending: "قيد الانتظار",
+            failed: "فشل",
+          };
+
+          return (
+            <Badge variant={variantMap[status] || "secondary"}>
+              {labelMap[status] || status}
+            </Badge>
+          );
+        },
+      },
+    ],
+    []
+  );
+
+  // Memoized table body content
+  const tableBodyContent = useMemo(() => {
+    if (loading) {
+      return (
+        <TableRow>
+          <TableCell colSpan={columns.length} className="h-24 text-center">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <p>جاري تحميل البيانات...</p>
+            </div>
+          </TableCell>
+        </TableRow>
+      );
     }
 
-    setSearchTimeout(
-      setTimeout(() => {
-        setCurrentPage(1);
-        getSales(1, itemsPerPage, {
-          search: query,
-          ...(statusFilter !== "all" && { status: statusFilter }),
-          ...(dateFrom && { dateFrom: dateFrom.toISOString() }),
-          ...(dateTo && { dateTo: dateTo.toISOString() }),
-        });
-      }, 300)
+    if (sales?.length > 0) {
+      return sales.map((sale) => (
+        <TableRow key={sale.id}>
+          {columns.map((column) => {
+            const value = column.accessor.includes(".")
+              ? column.accessor
+                  .split(".")
+                  .reduce((obj, key) => obj?.[key], sale)
+              : sale[column.accessor];
+
+            return (
+              <TableCell key={`${sale.id}-${column.accessor}`}>
+                {column.customRender ? column.customRender(value) : value}
+              </TableCell>
+            );
+          })}
+        </TableRow>
+      ));
+    }
+
+    return (
+      <TableRow>
+        <TableCell colSpan={columns.length} className="h-24 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <p>لا توجد بيانات متاحة</p>
+            {(searchQuery || statusFilter !== "all" || dateFrom || dateTo) && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("all");
+                  setDateFrom(null);
+                  setDateTo(null);
+                  setCurrentPage(1);
+                }}
+              >
+                إعادة تعيين الفلتر
+              </Button>
+            )}
+          </div>
+        </TableCell>
+      </TableRow>
     );
-  };
+  }, [
+    loading,
+    sales,
+    columns,
+    searchQuery,
+    statusFilter,
+    dateFrom,
+    dateTo,
+    setCurrentPage,
+  ]);
 
-  const handleStatusFilterChange = (value) => {
-    setStatusFilter(value);
-    setCurrentPage(1);
-    getSales(1, itemsPerPage, {
-      search: searchQuery,
-      ...(value !== "all" && { status: value }),
-      ...(dateFrom && { dateFrom: dateFrom.toISOString() }),
-      ...(dateTo && { dateTo: dateTo.toISOString() }),
-    });
-  };
+  // Memoized mobile card content
+  const mobileCardContent = useMemo(() => {
+    if (loading) {
+      return (
+        <div className="rounded-md border p-4">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p>جاري تحميل البيانات...</p>
+          </div>
+        </div>
+      );
+    }
 
-  const handleItemsPerPageChange = (value) => {
-    const newItemsPerPage = Number(value);
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
-    getSales(1, newItemsPerPage, {
-      search: searchQuery,
-      ...(statusFilter !== "all" && { status: statusFilter }),
-      ...(dateFrom && { dateFrom: dateFrom.toISOString() }),
-      ...(dateTo && { dateTo: dateTo.toISOString() }),
-    });
-  };
+    if (sales?.length > 0) {
+      return sales.map((sale) => (
+        <div key={sale.id} className="rounded-md border p-4">
+          {columns.map((column) => {
+            const value = column.accessor.includes(".")
+              ? column.accessor
+                  .split(".")
+                  .reduce((obj, key) => obj?.[key], sale)
+              : sale[column.accessor];
 
-  /***
-   *         invoice_id: invoice_id,
-            status: status,
-            message: message,
-   */
-  const columns = [
-    {
-      header: "الدورة",
-      accessor: "files.title",
-      label: "الدورة",
-    },
-    {
-      header: "الطالب",
-      accessor: "users.full_name",
-      label: "الطالب",
-    },
-    {
-      header: "رقم العملية",
-      accessor: "invoice_id",
-      label: "رقم العملية",
-    },
-    {
-      header: "رساله الدفع",
-      accessor: "message",
-      label: "رساله الدفع",
-    },
+            return (
+              <div
+                key={`${sale.id}-${column.accessor}`}
+                className="grid grid-cols-2 gap-2 py-2"
+              >
+                <div className="font-medium text-sm text-muted-foreground">
+                  {column.header}
+                </div>
+                <div className="text-sm">
+                  {column.customRender ? column.customRender(value) : value}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ));
+    }
 
-    {
-      header: "المبلغ",
-      accessor: "amount",
-      label: "المبلغ",
-      customRender: (amount) => `${amount?.toLocaleString() || 0} ر.س`,
-    },
-    {
-      header: "التاريخ",
-      accessor: "created_at",
-      label: "التاريخ",
-      customRender: (date) => formatArabicDate(date, { hijri: true }),
-    },
-    {
-      header: "الحالة",
-      accessor: "status",
-      label: "الحالة",
-      customRender: (status) => {
-        const variantMap = {
-          completed: "default",
-          pending: "secondary",
-          failed: "destructive",
-        };
-        const labelMap = {
-          completed: "مكتمل",
-          pending: "قيد الانتظار",
-          failed: "فشل",
-        };
-
-        return (
-          <Badge variant={variantMap[status] || "secondary"}>
-            {labelMap[status] || status}
-          </Badge>
-        );
-      },
-    },
-  ];
+    return (
+      <div className="rounded-md border p-4 h-24 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <p>لا توجد بيانات متاحة</p>
+          {(searchQuery || statusFilter !== "all" || dateFrom || dateTo) && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSearchQuery("");
+                setStatusFilter("all");
+                setDateFrom(null);
+                setDateTo(null);
+                setCurrentPage(1);
+              }}
+            >
+              إعادة تعيين الفلتر
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }, [
+    loading,
+    sales,
+    columns,
+    searchQuery,
+    statusFilter,
+    dateFrom,
+    dateTo,
+    setCurrentPage,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -315,138 +415,12 @@ export default function SalesContent() {
                   ))}
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                        <p>جاري تحميل البيانات...</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : sales?.length > 0 ? (
-                  sales.map((sale) => (
-                    <TableRow key={sale.id}>
-                      {columns.map((column) => (
-                        <TableCell key={`${sale.id}-${column.accessor}`}>
-                          {column.customRender
-                            ? column.customRender(
-                                column.accessor.includes(".")
-                                  ? column.accessor
-                                      .split(".")
-                                      .reduce((obj, key) => obj?.[key], sale)
-                                  : sale[column.accessor]
-                              )
-                            : column.accessor.includes(".")
-                            ? column.accessor
-                                .split(".")
-                                .reduce((obj, key) => obj?.[key], sale)
-                            : sale[column.accessor]}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <p>لا توجد بيانات متاحة</p>
-                        {searchQuery ||
-                        statusFilter !== "all" ||
-                        dateFrom ||
-                        dateTo ? (
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              setSearchQuery("");
-                              setStatusFilter("all");
-                              setDateFrom(null);
-                              setDateTo(null);
-                              setCurrentPage(1);
-                            }}
-                          >
-                            إعادة تعيين الفلتر
-                          </Button>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
+              <TableBody>{tableBodyContent}</TableBody>
             </Table>
           </div>
 
           {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
-            {loading ? (
-              <div className="rounded-md border p-4">
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <p>جاري تحميل البيانات...</p>
-                </div>
-              </div>
-            ) : sales?.length > 0 ? (
-              sales.map((sale) => (
-                <div key={sale.id} className="rounded-md border p-4">
-                  {columns.map((column) => (
-                    <div
-                      key={`${sale.id}-${column.accessor}`}
-                      className="grid grid-cols-2 gap-2 py-2"
-                    >
-                      <div className="font-medium text-sm text-muted-foreground">
-                        {column.header}
-                      </div>
-                      <div className="text-sm">
-                        {column.customRender
-                          ? column.customRender(
-                              column.accessor.includes(".")
-                                ? column.accessor
-                                    .split(".")
-                                    .reduce((obj, key) => obj?.[key], sale)
-                                : sale[column.accessor]
-                            )
-                          : column.accessor.includes(".")
-                          ? column.accessor
-                              .split(".")
-                              .reduce((obj, key) => obj?.[key], sale)
-                          : sale[column.accessor]}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))
-            ) : (
-              <div className="rounded-md border p-4 h-24 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-2">
-                  <p>لا توجد بيانات متاحة</p>
-                  {searchQuery ||
-                  statusFilter !== "all" ||
-                  dateFrom ||
-                  dateTo ? (
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setStatusFilter("all");
-                        setDateFrom(null);
-                        setDateTo(null);
-                        setCurrentPage(1);
-                      }}
-                    >
-                      إعادة تعيين الفلتر
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-            )}
-          </div>
+          <div className="md:hidden space-y-4">{mobileCardContent}</div>
 
           {/* Pagination - Works for both views */}
           {totalPages > 1 && (

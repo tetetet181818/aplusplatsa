@@ -29,6 +29,12 @@ import TableRowSkeleton from "@/components/skeletons/TableRowSkeleton";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/useDebounce";
 
+// Helper function to truncate text
+const truncateText = (text, maxLength = 20) => {
+  if (!text) return "N/A";
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
+
 export default function FilesContent() {
   const itemsPerPage = parseInt(import.meta.env.VITE_ITEMS_PER_PAGE) || 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -127,26 +133,31 @@ export default function FilesContent() {
       header: "العنوان",
       accessor: "title",
       label: "العنوان",
+      customRender: (title) => truncateText(title),
     },
     {
       header: "الوصف",
       accessor: "description",
       label: "الوصف",
+      customRender: (description) => truncateText(description),
     },
     {
       header: "الجامعة",
       accessor: "university",
       label: "الجامعة",
+      customRender: (university) => truncateText(university),
     },
     {
       header: "الكلية",
       accessor: "college",
       label: "الكلية",
+      customRender: (college) => truncateText(college),
     },
     {
       header: "المادة",
       accessor: "subject",
       label: "المادة",
+      customRender: (subject) => truncateText(subject),
     },
     {
       header: "السنة",
@@ -197,108 +208,95 @@ export default function FilesContent() {
       <Card className="border-0 shadow-lg">
         <CardHeader className="pb-4">
           <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-xl font-semibold">الملاحظات</CardTitle>
-              <CardDescription>
-                {debouncedSearchQuery || Object.values(filters).some(Boolean)
-                  ? "نتائج البحث"
-                  : "جميع الملاحظات المتاحة"}
-              </CardDescription>
-            </div>
-            <div className="flex flex-col gap-4 w-full sm:w-auto">
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="ابحث عن ملاحظة..."
-                    className="pl-10 pr-4 py-2 text-sm w-full"
-                    value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    disabled={loading}
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  {showFilters ? "إخفاء الفلاتر" : "عرض الفلاتر"}
-                </Button>
+            <CardTitle className="text-xl font-semibold">الملاحظات</CardTitle>
+            <CardDescription>
+              {debouncedSearchQuery || Object.values(filters).some(Boolean)
+                ? "نتائج البحث"
+                : "جميع الملاحظات المتاحة"}
+            </CardDescription>
+          </div>
+          <div className="flex flex-col gap-4 w-full sm:w-auto">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="ابحث عن ملاحظة..."
+                  className="pl-10 pr-4 py-2 text-sm w-full"
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  disabled={loading}
+                />
               </div>
-
-              {showFilters && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-                  <select
-                    className="border rounded-md p-2 text-sm"
-                    value={filters.university}
-                    onChange={(e) =>
-                      handleFilterChange("university", e.target.value)
-                    }
-                  >
-                    <option value="">كل الجامعات</option>
-                    {universities.map((uni) => (
-                      <option key={uni} value={uni}>
-                        {uni}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    className="border rounded-md p-2 text-sm"
-                    value={filters.college}
-                    onChange={(e) =>
-                      handleFilterChange("college", e.target.value)
-                    }
-                    disabled={!filters.university}
-                  >
-                    <option value="">كل الكليات</option>
-                    {colleges.map((college) => (
-                      <option key={college} value={college}>
-                        {college}
-                      </option>
-                    ))}
-                  </select>
-
-                  <Input
-                    type="text"
-                    placeholder="اسم المادة"
-                    className="p-2 text-sm"
-                    value={filters.subject}
-                    onChange={(e) =>
-                      handleFilterChange("subject", e.target.value)
-                    }
-                  />
-
-                  <Input
-                    type="number"
-                    placeholder="السنة"
-                    className="p-2 text-sm"
-                    value={filters.year}
-                    onChange={(e) => handleFilterChange("year", e.target.value)}
-                  />
-
-                  {(filters.university ||
-                    filters.college ||
-                    filters.subject ||
-                    filters.year) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-500"
-                      onClick={resetFilters}
-                    >
-                      مسح الفلاتر
-                    </Button>
-                  )}
-                </div>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                {showFilters ? "إخفاء الفلاتر" : "عرض الفلاتر"}
+              </Button>
             </div>
+
+            {showFilters && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+                <select
+                  className="border rounded-md p-2 text-sm"
+                  value={filters.university}
+                  onChange={(e) =>
+                    handleFilterChange("university", e.target.value)
+                  }
+                >
+                  <option value="">كل الجامعات</option>
+                  {universities.map((uni) => (
+                    <option key={uni} value={uni}>
+                      {uni}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  className="border rounded-md p-2 text-sm"
+                  value={filters.college}
+                  onChange={(e) =>
+                    handleFilterChange("college", e.target.value)
+                  }
+                  disabled={!filters.university}
+                >
+                  <option value="">كل الكليات</option>
+                  {colleges.map((college) => (
+                    <option key={college} value={college}>
+                      {college}
+                    </option>
+                  ))}
+                </select>
+
+                <Input
+                  type="number"
+                  placeholder="السنة"
+                  className="p-2 text-sm"
+                  value={filters.year}
+                  onChange={(e) => handleFilterChange("year", e.target.value)}
+                />
+
+                {(filters.university ||
+                  filters.college ||
+                  filters.subject ||
+                  filters.year) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-500"
+                    onClick={resetFilters}
+                  >
+                    مسح الفلاتر
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </CardHeader>
 
         <CardContent>
-          {/* Mobile Card Layout */}
           <div className="block md:hidden">
             {loading ? (
               Array.from({ length: 5 }).map((_, index) => (
@@ -343,7 +341,7 @@ export default function FilesContent() {
                             <span className="font-medium text-right">
                               {column.label}:
                             </span>
-                            <span className="text-muted-foreground text-right">
+                            <span className="text-muted-foreground text-right line-clamp-1">
                               {column.customRender
                                 ? column.customRender(note[column.accessor])
                                 : note[column.accessor] || "N/A"}
@@ -428,7 +426,6 @@ export default function FilesContent() {
             </Table>
           </div>
 
-          {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="flex justify-between items-center mt-4">
               <div className="text-sm text-muted-foreground">

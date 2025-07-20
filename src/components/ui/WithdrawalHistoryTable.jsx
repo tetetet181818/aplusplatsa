@@ -66,7 +66,7 @@ export default function WithdrawalHistoryTable({
 
     const payload = {
       id: selectedWithdrawal.id,
-      admin_notes: adminNotes,
+      admin_notes: adminNotes || "لا توجد ملاحظات", // Default note if empty
     };
 
     try {
@@ -84,62 +84,81 @@ export default function WithdrawalHistoryTable({
     }
   };
 
+  const getSafeValue = (value, defaultValue = "غير محدد") => {
+    return value || defaultValue;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "غير محدد";
+    try {
+      return new Date(dateString).toLocaleDateString("ar-EG");
+    } catch {
+      return "غير محدد";
+    }
+  };
+
   const columns = [
     {
       header: "الطالب",
       accessor: "account_name",
       label: "الطالب",
+      customRender: (name) => getSafeValue(name, "طالب غير معروف"),
     },
     {
       header: "البنك",
       accessor: "bank_name",
       label: "البنك",
+      customRender: (bank) => getSafeValue(bank, "غير محدد"),
     },
     {
       header: "IBAN",
       accessor: "iban",
       label: "IBAN",
+      customRender: (iban) => getSafeValue(iban, "غير متوفر"),
     },
     {
       header: "المبلغ",
       accessor: "amount",
       label: "المبلغ",
-      customRender: (amount) => `${amount?.toLocaleString() || 0} ر.س`,
+      customRender: (amount) => `${(amount || 0).toLocaleString()} ر.س`,
     },
     {
       header: "التاريخ",
       accessor: "created_at",
       label: "التاريخ",
-      customRender: (date) => new Date(date).toLocaleDateString("ar-EG"),
+      customRender: (date) => formatDate(date),
     },
     {
       header: "الحالة",
       accessor: "status",
       label: "الحالة",
-      customRender: (status) => (
-        <Badge
-          variant={
-            status === "pending"
-              ? "default"
-              : status === "accepted"
-              ? "success"
-              : "destructive"
-          }
-          className="text-center"
-        >
-          {status === "pending"
-            ? "قيد المعالجة"
-            : status === "accepted"
-            ? "مقبول"
-            : "مرفوض"}
-        </Badge>
-      ),
+      customRender: (status) => {
+        const safeStatus = getSafeValue(status, "pending");
+        return (
+          <Badge
+            variant={
+              safeStatus === "pending"
+                ? "default"
+                : safeStatus === "accepted"
+                ? "success"
+                : "destructive"
+            }
+            className="text-center"
+          >
+            {safeStatus === "pending"
+              ? "قيد المعالجة"
+              : safeStatus === "accepted"
+              ? "مقبول"
+              : "مرفوض"}
+          </Badge>
+        );
+      },
     },
     {
       header: "ملاحظات",
       accessor: "admin_notes",
       label: "ملاحظات",
-      customRender: (notes) => notes || "لا توجد ملاحظات",
+      customRender: (notes) => getSafeValue(notes, "لا توجد ملاحظات"),
     },
     {
       header: "الإجراءات",
@@ -276,14 +295,14 @@ export default function WithdrawalHistoryTable({
                           <span className="text-muted-foreground">
                             {column.customRender
                               ? column.customRender(withdrawal[column.accessor])
-                              : withdrawal[column.accessor]}
+                              : getSafeValue(withdrawal[column.accessor])}
                           </span>
                         </div>
                       ))}
                     <div className="pt-2">
                       {columns
                         .find((col) => !col.accessor)
-                        ?.customRender(withdrawal)}
+                        ?.customRender(null, withdrawal)}
                     </div>
                   </CardContent>
                 </Card>
@@ -339,7 +358,7 @@ export default function WithdrawalHistoryTable({
                           >
                             {column.customRender
                               ? column.customRender(value, withdrawal)
-                              : value}
+                              : getSafeValue(value)}
                           </TableCell>
                         );
                       })}
