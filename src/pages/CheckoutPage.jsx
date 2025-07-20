@@ -37,7 +37,7 @@ const CheckoutPage = () => {
   };
 
   return (
-    <div className="p-8 max-w-xl mx-auto text-center">
+    <div className="p-8 max-w-xl mx-auto text-center h-screen w-screen flex justify-center items-center flex-col">
       <h2 className="text-2xl font-bold mb-4">إتمام عملية الشراء</h2>
       <p className="mb-4">سيتم تحويلك إلى بوابة الدفع لإتمام شراء الملخص.</p>
       <Button onClick={handlePay} disabled={loading}>

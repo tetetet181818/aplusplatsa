@@ -40,11 +40,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 const StatCardSkeleton = () => (
   <Card className="animate-pulse">
@@ -77,9 +72,6 @@ export default function SalesContent() {
     totalSales,
     currentPage,
     itemsPerPage,
-    totalAmount,
-    platformProfit,
-    growthRate,
     getSales,
     getSalesStatistics,
     clearError,
@@ -206,6 +198,11 @@ export default function SalesContent() {
     });
   };
 
+  /***
+   *         invoice_id: invoice_id,
+            status: status,
+            message: message,
+   */
   const columns = [
     {
       header: "الدورة",
@@ -217,6 +214,17 @@ export default function SalesContent() {
       accessor: "users.full_name",
       label: "الطالب",
     },
+    {
+      header: "رقم العملية",
+      accessor: "invoice_id",
+      label: "رقم العملية",
+    },
+    {
+      header: "رساله الدفع",
+      accessor: "message",
+      label: "رساله الدفع",
+    },
+
     {
       header: "المبلغ",
       accessor: "amount",

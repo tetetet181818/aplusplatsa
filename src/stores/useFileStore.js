@@ -401,7 +401,7 @@ export const useFileStore = create((set, get) => ({
     }
   },
 
-  purchaseNote: async ({ noteId, userId }) => {
+  purchaseNote: async ({ noteId, userId, invoice_id, status, message }) => {
     set({ loading: true, error: null });
 
     try {
@@ -451,9 +451,11 @@ export const useFileStore = create((set, get) => ({
             platform_fee: platformFee,
             owner_earnings: ownerEarnings,
             payment_method: "bank",
-            status: "complete",
             user_name: transactionResult.owner_name,
             note_title: currentFile.title,
+            invoice_id: invoice_id,
+            status: status,
+            message: message,
           },
         ]);
 
@@ -687,7 +689,7 @@ export const useFileStore = create((set, get) => ({
           currency: "SAR",
           description: `شراء ملخص رقم ${noteId}`,
           callback_url: `https://aplusplatformsa.com/payment-success?noteId=${noteId}&userId=${userId}`,
-          success_url: `https://aplusplatformsa.com/payment-success?noteId=${noteId}&userId=${userId}`,
+          success_url: `https://aplusplatformsa.com/payment-success?invoiceId={invoice_id}&noteId=${noteId}&userId=${userId}`,
           back_url: `https://aplusplatformsa.com/checkout?noteId=${noteId}`,
           logo_url:
             "https://xlojbqqborsgdjyieftm.supabase.co/storage/v1/object/public/notes/images/logo.png",
@@ -701,10 +703,13 @@ export const useFileStore = create((set, get) => ({
       );
 
       const data = response.data;
-      console.log(data);
-      if (!data.url) {
+
+      if (!data.url || !data.id) {
         throw new Error("فشل في إنشاء رابط الدفع");
       }
+
+      const finalUrl =
+        data.url + `?invoiceId=${data.id}&noteId=${noteId}&userId=${userId}`;
 
       await supabase.from("notifications").insert({
         user_id: userId,
@@ -714,7 +719,7 @@ export const useFileStore = create((set, get) => ({
       });
 
       set({ loading: false });
-      return { success: true, url: data.url };
+      return { success: true, url: finalUrl };
     } catch (error) {
       console.error("Error creating payment link:", error);
       set({ loading: false, error: error.message });

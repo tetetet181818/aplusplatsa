@@ -7,25 +7,29 @@ const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const noteId = searchParams.get("noteId");
   const userId = searchParams.get("userId");
-
+  const invoice_id = searchParams.get("invoice_id");
+  const status = searchParams.get("status");
+  const message = searchParams.get("message");
   const { purchaseNote, loading } = useFileStore();
 
   useEffect(() => {
     if (noteId && userId) {
-      purchaseNote({ noteId, userId }).then((res) => {
-        if (res) {
-          toast({
-            title: "تم الشراء بنجاح!",
-            description: "تم شراء الملخص بنجاح",
-            variant: "success",
-          });
+      purchaseNote({ noteId, userId, invoice_id, status, message }).then(
+        (res) => {
+          if (res) {
+            toast({
+              title: "تم الشراء بنجاح!",
+              description: "تم شراء الملخص بنجاح",
+              variant: "success",
+            });
+          }
         }
-      });
+      );
     }
   }, [noteId, userId]);
 
   return (
-    <div className="p-6 text-center">
+    <div className="p-6 text-center h-screen w-screen flex justify-center items-center">
       {loading ? (
         <LoadingSpinner message="جاري تاكيد عمليه الدفع " />
       ) : (

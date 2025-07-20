@@ -20,6 +20,7 @@ import ForgetPassword from "./components/auth/ForgetPassword";
 import ResetPassword from "./components/auth/ResetPassword";
 import { NotificationPanel } from "./components/notifications/NotificationBell";
 import { useWithdrawalsStore } from "./stores/useWithdrawalsStore";
+import ScrollToTop from "./components/ScrollToTop";
 
 function App() {
   const { getUser, user } = useAuthStore((state) => state);
@@ -35,6 +36,7 @@ function App() {
         isRegisterDialogOpen={isRegisterDialogOpen}
         setIsRegisterDialogOpen={setIsRegisterDialogOpen}
       >
+        <ScrollToTop />
         <Routes>
           <Route
             path="/"
