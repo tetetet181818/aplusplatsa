@@ -15,7 +15,7 @@ export const registerSchema = Yup.object({
   full_name: Yup.string()
     .required("اسم المستخدم مطلوب")
     .trim()
-    .min(3, "يجب أن يكون اسم المستخدم 3 أحرف على الأقل"),
+    .min(4, "يجب أن يكون اسم المستخدم 3 أحرف على الأقل"),
   email: Yup.string()
     .email("البريد الإلكتروني غير صالح")
     .trim()
@@ -32,9 +32,7 @@ export const updateSchema = Yup.object({
     .min(2, "الاسم الأول يجب أن يكون على الأقل حرفين")
     .max(50, "الاسم الأول يجب أن يكون أقل من 50 حرف")
     .required("الاسم الأول مطلوب"),
-  email: Yup.string()
-    .email("البريد الإلكتروني غير صحيح")
-    .required("البريد الإلكتروني مطلوب"),
+  university: Yup.string().optional(),
 });
 export const passwordSchema = Yup.object({
   password: Yup.string().required("كلمه المرور مطلوبه"),

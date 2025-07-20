@@ -18,7 +18,6 @@ export default function NotesSortDropdown({ sortBy, onSortChange }) {
         <SelectContent>
           <SelectItem value="default">الافتراضي</SelectItem>
           <SelectItem value="downloads_desc">الأكثر تحميلًا</SelectItem>
-          <SelectItem value="rating_desc">الأعلى تقييمًا</SelectItem>
           <SelectItem value="price_asc">السعر: من الأقل للأعلى</SelectItem>
           <SelectItem value="price_desc">السعر: من الأعلى للأقل</SelectItem>
           <SelectItem value="date_desc">الأحدث</SelectItem>

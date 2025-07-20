@@ -245,8 +245,8 @@ const AddNoteForm = ({ universities, userNotesCount }) => {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   placeholder="أدخل سعر الملخص"
-                  min="0"
-                  step="0.01"
+                  min="10"
+                  step="1"
                   disabled={!isEditMode && !canAddMoreNotes}
                 />
                 {formik.touched.price && formik.errors.price && (

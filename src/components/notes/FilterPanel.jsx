@@ -17,7 +17,6 @@ const FilterPanel = ({
   filters,
   onFilterChange,
   onClearFilters,
-  subjects = [],
   years = [],
 }) => {
   const [availableColleges, setAvailableColleges] = useState([]);
@@ -163,30 +162,6 @@ const FilterPanel = ({
                     availableColleges,
                     "لا توجد كليات متاحة"
                   )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="subject">المادة</Label>
-              <Select
-                value={filters.subject}
-                onValueChange={(value) => onFilterChange("subject", value)}
-                disabled={isLoading || subjects.length === 0}
-              >
-                <SelectTrigger id="subject" className="w-full">
-                  <SelectValue
-                    placeholder={
-                      isLoading
-                        ? "جاري التحميل..."
-                        : subjects.length === 0
-                        ? "لا توجد مواد متاحة"
-                        : "اختر المادة"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {renderSelectOptions(subjects, "لا توجد مواد متاحة")}
                 </SelectContent>
               </Select>
             </div>

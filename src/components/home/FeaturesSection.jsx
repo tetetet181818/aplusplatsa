@@ -30,7 +30,7 @@ const FeatureCard = ({ icon, title, description, delay }) => (
   </motion.div>
 );
 
-const FeaturesSection = ({ user, setIsRegisterDialogOpen }) => {
+const FeaturesSection = () => {
   return (
     <section className="py-16 md:py-24 bg-gradient-to-b from-transparent to-sky-50 dark:to-gray-800/30">
       <div className="container px-4 md:px-6">
@@ -94,14 +94,6 @@ const FeaturesSection = ({ user, setIsRegisterDialogOpen }) => {
             شارك — تعلم — اربح
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            {!user && (
-              <Button
-                className="bg-primary hover:bg-primary/90 px-8 py-3"
-                onClick={() => setIsRegisterDialogOpen(true)}
-              >
-                سجل الآن
-              </Button>
-            )}
             <Link to="/notes">
               <Button
                 variant="outline"

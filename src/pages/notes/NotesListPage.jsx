@@ -20,20 +20,19 @@ const NotesListPage = () => {
     Boolean(
       searchParams.get("university") ||
         searchParams.get("college") ||
-        searchParams.get("subject") ||
         searchParams.get("year") ||
         searchParams.get("maxPrice")
     )
   );
-
   const [isTyping, setIsTyping] = useState(false);
   const [currentPage, setCurrentPage] = useState(
     parseInt(searchParams.get("page")) || 1
   );
   const itemsPerPage = 10;
+  const searchTimeoutRef = useRef(null);
 
   const {
-    files: notes,
+    files,
     loading: isLoadingNotes,
     searchNotes,
     universities,
@@ -44,16 +43,12 @@ const NotesListPage = () => {
   const [filters, setFilters] = useState({
     university: searchParams.get("university") || "",
     college: searchParams.get("college") || "",
-    subject: searchParams.get("subject") || "",
     year: searchParams.get("year") || "",
     maxPrice: searchParams.get("maxPrice") || "",
+    subject: searchParams.get("subject") || "",
     sortBy: searchParams.get("sortBy") || "default",
   });
-
-  const [filteredNotes, setFilteredNotes] = useState([]);
-  const searchTimeoutRef = useRef(null);
-
-  // Toggle filters visibility
+  console.log(filters);
   const toggleFilters = useCallback(() => {
     setShowFilters((prev) => !prev);
   }, []);
@@ -61,16 +56,10 @@ const NotesListPage = () => {
   useEffect(() => {
     const performSearch = async () => {
       try {
-        const results = await searchNotes(
-          searchQuery,
-          filters,
-          currentPage,
-          itemsPerPage
-        );
-        setFilteredNotes(results?.data || []);
+        await searchNotes(searchQuery, filters, currentPage, itemsPerPage);
         setError(null);
       } catch (err) {
-        setError("Failed to load notes");
+        setError("فشل في تحميل الملاحظات");
         console.error("Error:", err);
       } finally {
         setIsTyping(false);
@@ -89,7 +78,7 @@ const NotesListPage = () => {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchQuery, filters, currentPage, searchNotes, itemsPerPage]);
+  }, [searchQuery, filters, currentPage, searchNotes]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -104,45 +93,33 @@ const NotesListPage = () => {
     });
 
     setSearchParams(params, { replace: true });
-  }, [searchQuery, filters, currentPage, setSearchParams]);
+  }, [searchQuery, filters, currentPage]);
 
   useEffect(() => {
     const fetchColleges = async () => {
-      if (!filters.university) {
-        return;
-      }
-
+      if (!filters.university) return;
       try {
-        const colleges = await getCollegesByUniversity(filters.university);
+        await getCollegesByUniversity(filters.university);
       } catch (err) {
         console.error("Error fetching colleges:", err);
       }
     };
 
     fetchColleges();
-  }, [filters.university, getCollegesByUniversity]);
-
-  const subjects = useMemo(
-    () =>
-      [
-        ...new Set(filteredNotes.map((note) => note.subject).filter(Boolean)),
-      ].sort(),
-    [filteredNotes]
-  );
+  }, [filters.university]);
 
   const years = useMemo(
     () =>
-      [...new Set(filteredNotes.map((note) => note.year).filter(Boolean))].sort(
+      [...new Set(files.map((note) => note.year).filter(Boolean))].sort(
         (a, b) => b - a
       ),
-    [filteredNotes]
+    [files]
   );
 
   const handleFilterChange = useCallback((key, value) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
-      ...(key === "university" && { college: "" }), // Reset college when university changes
     }));
     setCurrentPage(1);
   }, []);
@@ -161,14 +138,14 @@ const NotesListPage = () => {
     setFilters({
       university: "",
       college: "",
-      subject: "",
       year: "",
       maxPrice: "",
+      subject: "",
       sortBy: "default",
     });
     setSearchQuery("");
     setCurrentPage(1);
-    setShowFilters(false); // Also hide filters when clearing
+    setShowFilters(false);
   }, []);
 
   const hasActiveFilters = useMemo(
@@ -178,7 +155,6 @@ const NotesListPage = () => {
       ) || searchQuery,
     [filters, searchQuery]
   );
-
   if (isLoadingNotes && !isTyping) {
     return <LoadingSpinner message="Loading notes..." />;
   }
@@ -194,9 +170,9 @@ const NotesListPage = () => {
   return (
     <div className="container py-12 px-4 md:px-6">
       <NotesListHeader
-        onToggleFilters={toggleFilters} // Use the toggle function here
+        onToggleFilters={toggleFilters}
         showFilters={showFilters}
-        itemCount={filteredNotes.length}
+        itemCount={files.length}
         totalCount={totalNotes || 0}
         hasActiveFilters={hasActiveFilters}
         onClearFilters={clearFilters}
@@ -220,7 +196,6 @@ const NotesListPage = () => {
             onFilterChange={handleFilterChange}
             onClearFilters={clearFilters}
             universities={universities}
-            subjects={subjects}
             years={years}
           />
         </div>
@@ -229,7 +204,7 @@ const NotesListPage = () => {
         <LoadingSpinner message="جاري التحميل..." />
       ) : (
         <NotesResultsSection
-          filteredNotes={filteredNotes}
+          filteredNotes={files}
           hasActiveFilters={hasActiveFilters}
           onClearFilters={clearFilters}
         />

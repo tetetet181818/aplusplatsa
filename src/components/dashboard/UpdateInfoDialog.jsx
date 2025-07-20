@@ -39,7 +39,7 @@ export default function UpdateInfoDialog({
     initialValues: {
       full_name: user?.full_name || "",
       email: user?.email || "",
-      university: "",
+      university: user?.university || "",
     },
     validationSchema: updateSchema,
     onSubmit: async (values) => {
@@ -75,28 +75,6 @@ export default function UpdateInfoDialog({
             </div>
             {formik.touched.full_name && formik.errors.full_name && (
               <p className="text-sm text-red-500">{formik.errors.full_name}</p>
-            )}
-          </div>
-
-          {/* Email */}
-          <div className="space-y-2">
-            <Label htmlFor="email">البريد الإلكتروني</Label>
-            <div className="relative">
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
-              </div>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                className="pr-10"
-                value={formik.values.email}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-              />
-            </div>
-            {formik.touched.email && formik.errors.email && (
-              <p className="text-sm text-red-500">{formik.errors.email}</p>
             )}
           </div>
 

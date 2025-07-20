@@ -5,7 +5,6 @@ export default function FilterPanelContainer({
   onFilterChange,
   onClearFilters,
   universities,
-  subjects,
   years,
 }) {
   return (
@@ -14,7 +13,6 @@ export default function FilterPanelContainer({
       onFilterChange={onFilterChange}
       onClearFilters={onClearFilters}
       universities={universities}
-      subjects={subjects}
       years={years}
     />
   );

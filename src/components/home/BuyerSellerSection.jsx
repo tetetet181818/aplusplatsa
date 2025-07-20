@@ -26,7 +26,7 @@ const FeatureItem = ({ icon, text }) => (
   </motion.li>
 );
 
-const BuyerSellerSection = ({ user, setIsRegisterDialogOpen }) => {
+const BuyerSellerSection = () => {
   return (
     <section className="py-16 md:py-24 bg-gray-50 dark:bg-gray-900">
       <div className="container px-4 md:px-6">
@@ -120,16 +120,6 @@ const BuyerSellerSection = ({ user, setIsRegisterDialogOpen }) => {
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
             انضم إلى مجتمعنا الأكاديمي وابدأ رحلتك سواء كبائع أو مشتري
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            {!user && (
-              <Button
-                className="bg-primary hover:bg-primary/90"
-                onClick={() => setIsRegisterDialogOpen(true)}
-              >
-                سجل الان
-              </Button>
-            )}
-          </div>
         </motion.div>
       </div>
     </section>

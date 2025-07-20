@@ -18,15 +18,6 @@ const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/notes?search=${searchQuery.trim()}`);
-    }
-    setSearchQuery("");
-    setIsMenuOpen(false);
-  };
-
   const switchToRegister = () => {
     setIsLoginDialogOpen(false);
     setIsRegisterDialogOpen(true);
@@ -58,19 +49,6 @@ const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
           </span>
         </Link>
 
-        <div className="hidden md:flex flex-1 justify-center px-4">
-          <form onSubmit={handleSearch} className="relative w-full max-w-md">
-            <Search className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="ابحث عن ملخصات..."
-              className="w-full pr-10 pl-3 h-10 rounded-lg"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
-        </div>
-
         <DesktopNav
           isAuthenticated={isAuthenticated}
           user={user}
@@ -100,7 +78,6 @@ const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
         onClose={() => setIsMenuOpen(false)}
         searchQuery={searchQuery}
         onSearchQueryChange={(e) => setSearchQuery(e.target.value)}
-        onSearchSubmit={handleSearch}
         isAuthenticated={isAuthenticated}
         user={user}
         onLoginOpen={() => {

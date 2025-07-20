@@ -116,13 +116,11 @@ export const useFileStore = create((set, get) => ({
       await supabase.from("notifications").insert({
         user_id: user.id,
         title: "تم إنشاء ملخص جديد",
-        body: `تم إنشاء ملخص جديد بعنوان "${title}" وهو قيد المراجعة`,
         type: "note",
       });
 
       toast({
         title: "تم إنشاء الملخص بنجاح",
-        description: "سيتم مراجعة الملخص من قبل الإدارة قبل نشره.",
         variant: "success",
       });
 
@@ -191,7 +189,6 @@ export const useFileStore = create((set, get) => ({
       let supabaseQuery = supabase
         .from("files")
         .select("*", { count: "exact" })
-        .order("created_at", { ascending: false })
         .range(from, to);
 
       if (query) {
@@ -212,8 +209,25 @@ export const useFileStore = create((set, get) => ({
         supabaseQuery = supabaseQuery.eq("year", filters.year);
       }
 
-      if (filters.subject) {
-        supabaseQuery = supabaseQuery.ilike("subject", `%${filters.subject}%`);
+      // الترتيب حسب sortBy
+      switch (filters.sortBy) {
+        case "downloads_desc":
+          supabaseQuery = supabaseQuery.order("downloads", {
+            ascending: false,
+          });
+          break;
+        case "price_asc":
+          supabaseQuery = supabaseQuery.order("price", { ascending: true });
+          break;
+        case "price_desc":
+          supabaseQuery = supabaseQuery.order("price", { ascending: false });
+          break;
+        case "date_desc":
+        default:
+          supabaseQuery = supabaseQuery.order("created_at", {
+            ascending: false,
+          });
+          break;
       }
 
       const { data: files, count, error } = await supabaseQuery;
@@ -658,6 +672,8 @@ export const useFileStore = create((set, get) => ({
           callback_url: `https://aplusplatformsa.com/payment-success?noteId=${noteId}&userId=${userId}`,
           success_url: `https://aplusplatformsa.com/payment-success?noteId=${noteId}&userId=${userId}`,
           back_url: `https://aplusplatformsa.com/checkout?noteId=${noteId}`,
+          logo_url:
+            "https://xlojbqqborsgdjyieftm.supabase.co/storage/v1/object/public/notes/images/logo.png",
         },
         {
           headers: {
@@ -668,6 +684,7 @@ export const useFileStore = create((set, get) => ({
       );
 
       const data = response.data;
+      console.log(data);
       if (!data.url) {
         throw new Error("فشل في إنشاء رابط الدفع");
       }

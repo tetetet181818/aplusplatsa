@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useFileStore } from "../stores/useFileStore";
 import { toast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import LoadingSpinner from "../components/shared/LoadingSpinner";
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const noteId = searchParams.get("noteId");
@@ -13,17 +13,11 @@ const PaymentSuccess = () => {
   useEffect(() => {
     if (noteId && userId) {
       purchaseNote({ noteId, userId }).then((res) => {
-        if (res.success) {
+        if (res) {
           toast({
             title: "تم الشراء بنجاح!",
             description: "تم شراء الملخص بنجاح",
             variant: "success",
-          });
-        } else {
-          toast({
-            title: "فشل شراء الملخص",
-            description: "فشل شراء الملخص برجاء المحاوله لاحقا",
-            variant: "destructive",
           });
         }
       });
@@ -33,14 +27,11 @@ const PaymentSuccess = () => {
   return (
     <div className="p-6 text-center">
       {loading ? (
-        <>
-          <Loader2 className="size-5 animate-spin" />
-          "جاري تأكيد الدفع..."
-        </>
+        <LoadingSpinner message="جاري تاكيد عمليه الدفع " />
       ) : (
         <>
           <Link
-            className="bg-blue-700 text-white p-5 rounded-sm text-xl  hover:underline hover:text-black transition-colors my-20"
+            className="bg-blue-700 text-white p-5 rounded-sm text-xl  hover:underline transition-colors my-20"
             to={`/notes/${noteId}`}
           >
             الذهاب الي الملخص

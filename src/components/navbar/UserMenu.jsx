@@ -24,10 +24,6 @@ export default function UserMenu({ handleLogout, user }) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
           <Avatar className="h-8 w-8">
-            <AvatarImage
-              src={`https://api.dicebear.com/6.x/initials/svg?seed=${user?.full_name}`}
-              alt={user?.full_name}
-            />
             <AvatarFallback>
               {user?.full_name?.charAt(0)?.toUpperCase() || "?"}
             </AvatarFallback>

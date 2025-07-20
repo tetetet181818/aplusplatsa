@@ -2,11 +2,14 @@ import * as yup from "yup";
 import { MAX_PAGES_PER_NOTE } from "@/constants/index.js";
 export const addNoteSchema = yup.object().shape({
   title: yup.string().required("عنوان الملخص مطلوب"),
-  description: yup.string().required("وصف الملخص مطلوب"),
+  description: yup
+    .string()
+    .required("وصف الملخص مطلوب")
+    .min(30, "الحد الادني 30 حرف"),
   price: yup
     .number()
     .required("السعر مطلوب")
-    .min(0, "السعر يجب أن يكون موجباً")
+    .min(10, "السعر يجب أن يكون موجباً")
     .max(1000, "السعر يجب أن يكون أقل من 1000 ريال"),
   university: yup.string().required("الجامعة مطلوبة"),
   college: yup.string().required("الكلية مطلوبة"),
