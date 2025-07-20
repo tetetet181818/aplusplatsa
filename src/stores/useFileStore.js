@@ -33,9 +33,11 @@ export const useFileStore = create((set, get) => ({
     const contactMethod = formData.get("contactMethod");
     const file = formData.get("file");
     const imageFile = formData.get("imageFile");
+
     try {
       set({ loading: true, error: null });
 
+      // Fetch the authenticated user
       const {
         data: { user },
         error: userError,
@@ -49,41 +51,54 @@ export const useFileStore = create((set, get) => ({
         throw new Error("يجب اختيار ملف PDF");
       }
 
+      // Upload PDF file using Axios
       const pdfExtension = file.name.split(".").pop();
       const pdfFilename = `pdfs/${user.id}_${Date.now()}.${pdfExtension}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from(BUCKET_NAME)
-        .upload(pdfFilename, file);
+      const pdfResponse = await axios.post(
+        `${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${pdfFilename}`,
+        file,
+        {
+          headers: {
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            "x-upsert": "true",
+            "Content-Type": file.type,
+          },
+        }
+      );
 
-      if (uploadError) {
-        throw new Error("فشل في رفع ملف PDF: " + uploadError.message);
+      if (pdfResponse.status !== 200) {
+        throw new Error("فشل في رفع ملف PDF");
       }
 
-      const { data: pdfUrl } = supabase.storage
-        .from(BUCKET_NAME)
-        .getPublicUrl(pdfFilename);
+      const pdfUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${pdfFilename}`;
 
+      // Upload image file if provided
       let imageUrl = DEFAULT_IMAGE_URL;
       if (imageFile) {
         const imgExtension = imageFile.name.split(".").pop();
         const imgFilename = `images/${user.id}_${Date.now()}.${imgExtension}`;
 
-        const { error: imageUploadError } = await supabase.storage
-          .from(BUCKET_NAME)
-          .upload(imgFilename, imageFile);
+        const imgResponse = await axios.post(
+          `${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${imgFilename}`,
+          imageFile,
+          {
+            headers: {
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+              "x-upsert": "true",
+              "Content-Type": imageFile.type,
+            },
+          }
+        );
 
-        if (imageUploadError) {
-          console.error("Image upload error:", imageUploadError);
-          throw new Error("فشل في رفع الصورة: " + imageUploadError.message);
+        if (imgResponse.status !== 200) {
+          throw new Error("فشل في رفع الصورة");
         }
 
-        const { data: imageUrlData } = supabase.storage
-          .from(BUCKET_NAME)
-          .getPublicUrl(imgFilename);
-        imageUrl = imageUrlData.publicUrl;
+        imageUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${imgFilename}`;
       }
 
+      // Insert note data into Supabase table
       const { data: files, error: insertError } = await supabase
         .from("files")
         .insert([
@@ -91,7 +106,7 @@ export const useFileStore = create((set, get) => ({
             title,
             description,
             price: Number(price) || 0,
-            file_url: pdfUrl.publicUrl,
+            file_url: pdfUrl,
             cover_url: imageUrl,
             owner_id: user.id,
             university,
@@ -111,8 +126,10 @@ export const useFileStore = create((set, get) => ({
         throw new Error("فشل حفظ بيانات الملف: " + insertError.message);
       }
 
+      // Update notes count
       await get().getNotesCount();
 
+      // Insert notification
       await supabase.from("notifications").insert({
         user_id: user.id,
         title: "تم إنشاء ملخص جديد",

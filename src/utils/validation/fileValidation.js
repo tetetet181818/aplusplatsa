@@ -8,9 +8,9 @@ export const addNoteSchema = yup.object().shape({
     .min(30, "الحد الادني 30 حرف"),
   price: yup
     .number()
-    .required("السعر مطلوب")
-    .min(10, "السعر يجب أن يكون موجباً")
-    .max(1000, "السعر يجب أن يكون أقل من 1000 ريال"),
+    .min(10, "السعر يجب أن يكون اكثر من 10 ريال")
+    .max(1000, "السعر يجب أن يكون أقل من 1000 ريال")
+    .required("السعر مطلوب"),
   university: yup.string().required("الجامعة مطلوبة"),
   college: yup.string().required("الكلية مطلوبة"),
   subject: yup.string().required("المادة مطلوبة"),
