@@ -9,7 +9,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
 const BUCKET_NAME = "notes";
 const moyasar_key = import.meta.env.VITE_SK_LIVE;
-const domain = "http://localhost:5173";
+const domain = "https://aplusplatformsa.com";
 export const useFileStore = create((set, get) => ({
   loading: false,
   error: null,
