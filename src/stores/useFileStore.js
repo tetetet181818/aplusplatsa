@@ -9,7 +9,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
 const BUCKET_NAME = "notes";
 const moyasar_key = import.meta.env.VITE_SK_LIVE;
-
+const domain = "http://localhost:5173";
 export const useFileStore = create((set, get) => ({
   loading: false,
   error: null,
@@ -402,6 +402,14 @@ export const useFileStore = create((set, get) => ({
   },
 
   purchaseNote: async ({ noteId, userId, invoice_id, status, message }) => {
+    console.log(
+      "from file store slice",
+      noteId,
+      userId,
+      invoice_id,
+      status,
+      message
+    );
     set({ loading: true, error: null });
 
     try {
@@ -416,7 +424,6 @@ export const useFileStore = create((set, get) => ({
         throw new Error("Failed to fetch note: " + fetchError.message);
       if (!currentFile) throw new Error("Note not found");
 
-      // 2. Check if user already purchased
       const currentPurchasers = currentFile.purchased_by || [];
       if (currentPurchasers.includes(userId)) {
         throw new Error("لقد قمت بشراء هذا الملخص مسبقاً");
@@ -437,8 +444,8 @@ export const useFileStore = create((set, get) => ({
           platform_fee_rate: platformFeeRate,
         });
 
-      if (transactionError)
-        throw new Error("Transaction failed: " + transactionError.message);
+      // if (transactionError)
+      //   throw new Error("Transaction failed: " + transactionError.message);
 
       // 5. Record sale
       const { data: salesData, error: salesError } = await supabase
@@ -449,9 +456,9 @@ export const useFileStore = create((set, get) => ({
             note_id: noteId,
             amount: currentFile.price,
             platform_fee: platformFee,
-            owner_earnings: ownerEarnings,
+            // owner_earnings: ownerEarnings,
             payment_method: "bank",
-            user_name: transactionResult.owner_name,
+            user_name: transactionResult.owner_name || "",
             note_title: currentFile.title,
             invoice_id: invoice_id,
             status: status,
@@ -688,9 +695,9 @@ export const useFileStore = create((set, get) => ({
           amount: parseInt(amount) * 100,
           currency: "SAR",
           description: `شراء ملخص رقم ${noteId}`,
-          callback_url: `https://aplusplatformsa.com/payment-success?noteId=${noteId}&userId=${userId}`,
-          success_url: `https://aplusplatformsa.com/payment-success?invoiceId={invoice_id}&noteId=${noteId}&userId=${userId}`,
-          back_url: `https://aplusplatformsa.com/checkout?noteId=${noteId}`,
+          callback_url: `${domain}/payment-success?noteId=${noteId}&userId=${userId}`,
+          success_url: `${domain}/payment-success?invoiceId={invoice_id}&noteId=${noteId}&userId=${userId}`,
+          back_url: `${domain}/checkout?noteId=${noteId}`,
           logo_url:
             "https://xlojbqqborsgdjyieftm.supabase.co/storage/v1/object/public/notes/images/logo.png",
         },

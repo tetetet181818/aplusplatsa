@@ -11,7 +11,7 @@ const PaymentSuccess = () => {
   const status = searchParams.get("status");
   const message = searchParams.get("message");
   const { purchaseNote, loading } = useFileStore();
-
+  console.log(noteId, userId, invoice_id, status, message);
   useEffect(() => {
     if (noteId && userId) {
       purchaseNote({ noteId, userId, invoice_id, status, message }).then(
