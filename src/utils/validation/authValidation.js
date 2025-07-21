@@ -23,7 +23,11 @@ export const registerSchema = Yup.object({
   password: Yup.string()
     .trim()
     .required("كلمة المرور مطلوبة")
-    .min(6, "يجب أن تكون كلمة المرور 6 أحرف على الأقل"),
+    .min(8, "يجب أن تكون كلمة المرور8 أحرف على الأقل")
+    .matches(
+      /^(?=.*[a-zA-Z])(?=.*[0-9])/,
+      "يجب أن تحتوي كلمة المرور على أحرف وأرقام"
+    ),
   university: Yup.string().optional(),
 });
 

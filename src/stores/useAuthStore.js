@@ -159,9 +159,19 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  logout: async () => {
+  logout: async ({ password }) => {
     set({ loading: true, error: null });
     try {
+      const { data: verifyData, error: verifyError } =
+        await supabase.auth.signInWithPassword({
+          email: get().user?.email,
+          password: password,
+        });
+
+      if (verifyError) {
+        throw new Error("كلمة المرور غير صحيحة");
+      }
+
       let { error } = await supabase.auth.signOut();
 
       if (error) throw error;

@@ -1,6 +1,17 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Shield, FileText, User, Database, CreditCard, Share2, CheckCircle, Edit, Cookie, RefreshCcw } from 'lucide-react';
+import React from "react";
+import { motion } from "framer-motion";
+import {
+  Shield,
+  FileText,
+  User,
+  Database,
+  CreditCard,
+  Share2,
+  CheckCircle,
+  Edit,
+  Cookie,
+  RefreshCcw,
+} from "lucide-react";
 
 const PrivacyPolicyPage = () => {
   const sectionVariants = {
@@ -12,10 +23,14 @@ const PrivacyPolicyPage = () => {
     <motion.div variants={sectionVariants} className="mb-6">
       <div className="flex items-start">
         <div className="flex-shrink-0 mr-4 mt-1">
-          {React.cloneElement(icon, { className: "h-6 w-6 text-primary dark:text-primary-light" })}
+          {React.cloneElement(icon, {
+            className: "h-6 w-6 text-primary dark:text-primary-light",
+          })}
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">{title}</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
+            {title}
+          </h2>
           <div className="text-gray-600 dark:text-gray-400 leading-relaxed space-y-2">
             {children}
           </div>
@@ -32,7 +47,10 @@ const PrivacyPolicyPage = () => {
       className="container mx-auto py-12 px-4 md:px-6 bg-gradient-to-br from-sky-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-gray-800 dark:to-gray-900 min-h-screen"
     >
       <header className="text-center mb-12">
-        <motion.div variants={sectionVariants} className="inline-block p-4 bg-primary/10 dark:bg-primary-light/10 rounded-full mb-4">
+        <motion.div
+          variants={sectionVariants}
+          className="inline-block p-4 bg-primary/10 dark:bg-primary-light/10 rounded-full mb-4"
+        >
           <Shield className="h-12 w-12 text-primary dark:text-primary-light" />
         </motion.div>
         <motion.h1
@@ -41,11 +59,14 @@ const PrivacyPolicyPage = () => {
         >
           سياسة الخصوصية – منصة أ+
         </motion.h1>
+
         <motion.p
           variants={sectionVariants}
           className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto"
         >
-          في منصة أ+، نولي خصوصيتك أهمية قصوى ونسعى لحماية جميع بياناتك الشخصية التي تزودنا بها أثناء استخدامك للمنصة. توضح هذه السياسة كيفية جمع المعلومات واستخدامها وحمايتها، إضافة إلى حقوقك كمستخدم.
+          في منصة أ+، نولي خصوصيتك أهمية قصوى ونسعى لحماية جميع بياناتك الشخصية
+          التي تزودنا بها أثناء استخدامك للمنصة. توضح هذه السياسة كيفية جمع
+          المعلومات واستخدامها وحمايتها، إضافة إلى حقوقك كمستخدم.
         </motion.p>
       </header>
 
@@ -53,55 +74,86 @@ const PrivacyPolicyPage = () => {
         <ListItem icon={<User />} title="١. المعلومات التي نجمعها">
           <p>عند استخدام المنصة، قد نقوم بجمع المعلومات التالية:</p>
           <ul className="list-disc list-inside space-y-1 pl-4">
-            <li><strong>معلومات الحساب:</strong> مثل الاسم، البريد الإلكتروني، الجامعة، التخصص، وكلمة المرور.</li>
-            <li><strong>معلومات الدفع:</strong> لا نقوم بتخزين بيانات البطاقات البنكية، بل تُعالج من خلال جهات دفع إلكتروني آمنة وموثوقة.</li>
-            <li><strong>الملخصات والمحتوى:</strong> الملفات التي تقوم برفعها أو عرضها للبيع.</li>
-            <li><strong>بيانات الاستخدام:</strong> مثل المواد التي تتصفحها، عمليات الشراء والبيع، وسلوكك داخل المنصة.</li>
+            <li>
+              <strong>معلومات الحساب:</strong> مثل الاسم، البريد الإلكتروني،
+              الجامعة، التخصص، وكلمة المرور{" "}
+            </li>
+            <li>
+              <strong>معلومات الدفع:</strong> لا نقوم بتخزين بيانات البطاقات
+              البنكية، حيث تُعالج عمليات الدفع من خلال بوابات إلكترونية آمنة
+              (مثل “ميسر”)
+            </li>
+            <li>
+              <strong>الملخصات والمحتوى:</strong> الملفات التي تقوم برفعها أو
+              عرضها للبيع من خلال حسابك
+            </li>
+            <li>
+              <strong>بيانات الاستخدام:</strong> مثل الصفحات التي تزورها، عمليات
+              الشراء والبيع، وسلوكك داخل المنصة
+            </li>
           </ul>
         </ListItem>
 
         <ListItem icon={<FileText />} title="٢. كيفية استخدام المعلومات">
-          <p>نستخدم المعلومات التي تقدمها لنا من أجل:</p>
           <ul className="list-disc list-inside space-y-1 pl-4">
-            <li>تحسين تجربة المستخدم وتقديم محتوى يناسب احتياجاتك.</li>
-            <li>تنفيذ عمليات الشراء وتحويل الأرباح للمستخدمين البائعين.</li>
+            <li>التواصل معك عند الحاجة (دعم – تنبيهات – إشعارات).</li>
             <li>التواصل معك عند الحاجة للدعم أو التحديثات.</li>
             <li>حماية المنصة من الاستخدام غير القانوني أو المخالف.</li>
           </ul>
         </ListItem>
 
         <ListItem icon={<Database />} title="٣. حماية البيانات">
-          <p>نلتزم بحماية معلوماتك من خلال:</p>
           <ul className="list-disc list-inside space-y-1 pl-4">
-            <li>تقنيات التشفير.</li>
-            <li>أنظمة حماية متقدمة ضد الاختراق.</li>
-            <li>تقييد صلاحيات الوصول للبيانات داخل فريق المنصة.</li>
+            <li>نستخدم تقنيات تشفير لحماية البيانات أثناء النقل.</li>
+            <li>أنظمة حماية داخلية ضد الاختراقات.</li>
+            <li>تقييد صلاحيات الوصول للبيانات الحساسة داخل الفريق التقني.</li>
           </ul>
         </ListItem>
 
         <ListItem icon={<Share2 />} title="٤. مشاركة المعلومات">
           <ul className="list-disc list-inside space-y-1 pl-4">
-            <li>لا نقوم ببيع أو تأجير بياناتك لأي جهة خارجية.</li>
-            <li>قد نشارك معلومات محدودة فقط مع جهات الدفع الإلكتروني لضمان تنفيذ العمليات المالية بأمان.</li>
+            <li>لا نبيع أو نشارك بياناتك مع جهات تجارية.</li>
+            <li>نشارك فقط ما يلزم مع بوابات الدفع لإتمام المعاملات بأمان.</li>
           </ul>
         </ListItem>
 
         <ListItem icon={<CheckCircle />} title="٥. حقوق المستخدم">
-          <p>لديك كامل الحق في:</p>
           <ul className="list-disc list-inside space-y-1 pl-4">
-            <li>الاطلاع على بياناتك الشخصية.</li>
-            <li>طلب تعديلها أو حذفها.</li>
-            <li>إغلاق حسابك في أي وقت.</li>
+            <li>يحق لك الاطلاع على بياناتك، وتعديلها أو حذفها.</li>
+            <li>يمكنك إغلاق حسابك في أي وقت.</li>
+            <li>
+              للتواصل حول خصوصيتك:{" "}
+              <a href="mailto:aplusplatform@outlook.com">
+                aplusplatform@outlook.com
+              </a>
+            </li>
           </ul>
-          <p>للتواصل معنا بشأن هذه الحقوق، يمكنك مراسلتنا عبر البريد التالي: <a href="mailto:aplusplatform@outlook.com" className="text-primary dark:text-primary-light hover:underline">aplusplatform@outlook.com</a></p>
+          <p>
+            للتواصل معنا بشأن هذه الحقوق، يمكنك مراسلتنا عبر البريد التالي:{" "}
+            <a
+              href="mailto:aplusplatform@outlook.com"
+              className="text-primary dark:text-primary-light hover:underline"
+            >
+              aplusplatform@outlook.com
+            </a>
+          </p>
         </ListItem>
 
         <ListItem icon={<Cookie />} title="٦. ملفات تعريف الارتباط (الكوكيز)">
-          <p>نستخدم ملفات صغيرة تُخزن في جهازك لتسهيل استخدام المنصة وتحليل الأداء. يمكنك دائمًا إيقافها من إعدادات متصفحك.</p>
+          <ul className="list-disc list-inside space-y-1 pl-4">
+            <li>نستخدم الكوكيز لتحسين الأداء وتخصيص التجربة.</li>
+            <li>يمكنك إيقاف الكوكيز من إعدادات متصفحك في أي وقت.</li>
+          </ul>
         </ListItem>
 
         <ListItem icon={<RefreshCcw />} title="٧. التعديلات على سياسة الخصوصية">
-          <p>قد نقوم بتحديث هذه السياسة من وقت لآخر، وسيتم إشعارك بأي تغييرات مهمة داخل المنصة أو عبر البريد الإلكتروني.</p>
+          <ul className="list-disc list-inside space-y-1 pl-4">
+            <li>قد نقوم بتحديث هذه السياسة حسب الحاجة.</li>
+            <li>
+              سيتم إشعارك داخل المنصة أو عبر بريدك المسجّل في حال وجود تغييرات
+              جوهرية.
+            </li>
+          </ul>
         </ListItem>
       </div>
     </motion.div>

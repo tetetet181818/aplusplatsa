@@ -14,6 +14,7 @@ import { useFormik } from "formik";
 import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import GoogleLoginButton from "./GoogleLoginButton";
+import { Link } from "react-router-dom";
 
 const LoginDialog = ({ isOpen, onClose, onSwitchToRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -123,6 +124,13 @@ const LoginDialog = ({ isOpen, onClose, onSwitchToRegister }) => {
               "تسجيل الدخول"
             )}
           </Button>
+          <Link
+            onClick={onClose}
+            to="/forget-password"
+            className="link hover:underline hover:text-blue-500 transition-colors my-10 text-center block"
+          >
+            نسيت كلمه المرور ؟
+          </Link>
         </form>
         <GoogleLoginButton />
         <p className="text-center text-sm text-gray-500">

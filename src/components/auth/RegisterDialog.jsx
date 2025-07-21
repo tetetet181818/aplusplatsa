@@ -30,9 +30,11 @@ import {
 } from "@/components/ui/select";
 import { universities } from "../../constants/index";
 import { Link } from "react-router-dom";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const RegisterDialog = ({ isOpen, onClose, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const { register, loading, error, clearError } = useAuthStore(
     (state) => state
   );
@@ -57,6 +59,14 @@ const RegisterDialog = ({ isOpen, onClose, onSwitchToLogin }) => {
     },
     validationSchema: registerSchema,
     onSubmit: async (values, { resetForm }) => {
+      if (!termsAccepted) {
+        toast({
+          title: "يجب الموافقة على الشروط والأحكام",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const user = await register(values);
       if (user) {
         toast({ title: "تم إنشاء الحساب بنجاح" });
@@ -191,11 +201,43 @@ const RegisterDialog = ({ isOpen, onClose, onSwitchToLogin }) => {
             )}
           </div>
 
+          {/* Terms and Conditions */}
+          <div className="flex items-start space-x-2 space-x-reverse">
+            <Checkbox
+              id="terms"
+              checked={termsAccepted}
+              onCheckedChange={(checked) => setTermsAccepted(checked)}
+            />
+            <div className="grid gap-1.5 leading-none">
+              <label
+                htmlFor="terms"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                أوافق على{" "}
+                <Link
+                  to="/terms-of-service"
+                  className="text-primary hover:underline"
+                  target="_blank"
+                >
+                  الشروط والأحكام
+                </Link>{" "}
+                و{" "}
+                <Link
+                  to="/privacy-policy"
+                  className="text-primary hover:underline"
+                  target="_blank"
+                >
+                  سياسة الخصوصية
+                </Link>
+              </label>
+            </div>
+          </div>
+
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading || formik.isSubmitting}
-            className="w-full py-2 px-4 bg-primary text-white rounded-md hover:bg-primary-dark transition flex items-center justify-center"
+            disabled={loading || formik.isSubmitting || !termsAccepted}
+            className="w-full py-2 px-4 bg-primary text-white rounded-md hover:bg-primary-dark transition flex items-center justify-center disabled:opacity-70"
           >
             {loading || formik.isSubmitting ? (
               <>
@@ -207,12 +249,14 @@ const RegisterDialog = ({ isOpen, onClose, onSwitchToLogin }) => {
             )}
           </button>
         </form>
+
         <Link
           to="/forget-password"
           className="link hover:underline hover:text-blue-500 transition-colors"
         >
           نسيت كلمه المرور
         </Link>
+
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300" />

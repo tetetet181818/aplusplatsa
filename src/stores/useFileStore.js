@@ -474,7 +474,7 @@ export const useFileStore = create((set, get) => ({
         {
           user_id: userId,
           title: "تم شراء ملخص",
-          body: `تم شراء ملخص "${currentFile.title}" بنجاح`,
+          body: `تم شراء ملخص "${currentFile.title}" بنجاح , رقم الفاتورة: ${invoice_id}, `,
           type: "purchase",
         },
         {

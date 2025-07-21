@@ -29,6 +29,7 @@ const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
   };
   const handleLogout = async () => {
     const res = await logout();
+
     if (res) {
       toast({
         title: "تم تسجيل الخروج بنجاح",
