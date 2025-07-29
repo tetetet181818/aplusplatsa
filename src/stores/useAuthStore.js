@@ -253,6 +253,9 @@ export const useAuthStore = create((set, get) => ({
       set({ loadingWithGoogle: true });
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        options: {
+          redirectTo: `http://aplusplatformsa.com`,
+        },
       });
 
       if (error) throw error;
@@ -737,15 +740,15 @@ export const useAuthStore = create((set, get) => ({
   clearError: () => set({ error: null }),
 }));
 
-// supabase.auth.onAuthStateChange((event, session) => {
-//   const store = useAuthStore.getState();
+supabase.auth.onAuthStateChange((event, session) => {
+  const store = useAuthStore.getState();
 
-//   if (event === "SIGNED_IN" && session?.user) {
-//     store.getUser();
-//   } else if (event === "SIGNED_OUT") {
-//     store.setState({
-//       isAuthenticated: false,
-//       user: null,
-//     });
-//   }
-// });
+  if (event === "SIGNED_IN" && session?.user) {
+    store.getUser();
+  } else if (event === "SIGNED_OUT") {
+    store.setState({
+      isAuthenticated: false,
+      user: null,
+    });
+  }
+});
