@@ -9,13 +9,14 @@ import MobileMenu from "@/components/navbar/MobileMenu";
 import LoginDialog from "@/components/auth/LoginDialog";
 import RegisterDialog from "@/components/auth/RegisterDialog";
 import { toast } from "@/components/ui/use-toast";
+import LogoutDialog from "./navbar/LogoutDialog";
 const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuthStore((state) => state);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
-
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const switchToRegister = () => {
@@ -27,15 +28,7 @@ const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
     setIsRegisterDialogOpen(false);
     setIsLoginDialogOpen(true);
   };
-  const handleLogout = async () => {
-    const res = await logout();
 
-    if (res) {
-      toast({
-        title: "تم تسجيل الخروج بنجاح",
-      });
-    }
-  };
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -55,7 +48,9 @@ const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
           user={user}
           onLoginOpen={() => setIsLoginDialogOpen(true)}
           onRegisterOpen={() => setIsRegisterDialogOpen(true)}
-          handleLogout={handleLogout}
+          onLogOutOpen={() => {
+            setOpenLogoutDialog(true);
+          }}
         />
 
         <div className="md:hidden">
@@ -89,7 +84,10 @@ const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
           setIsRegisterDialogOpen(true);
           setIsMenuOpen(false);
         }}
-        handleLogout={handleLogout}
+        onLogOutOpen={() => {
+          setOpenLogoutDialog(true);
+          setIsMenuOpen(false);
+        }}
       />
 
       <LoginDialog
@@ -104,6 +102,11 @@ const Navbar = ({ isRegisterDialogOpen, setIsRegisterDialogOpen }) => {
         onOpenChange={setIsRegisterDialogOpen}
         onSwitchToLogin={switchToLogin}
         onClose={() => setIsRegisterDialogOpen(false)}
+      />
+
+      <LogoutDialog
+        onClose={() => setOpenLogoutDialog(false)}
+        openDialog={openLogoutDialog}
       />
     </header>
   );

@@ -19,9 +19,8 @@ import {
 import { useMemo, useState } from "react";
 import { use } from "react";
 import LogoutDialog from "./LogoutDialog";
-export default function UserMenu({ handleLogout, user }) {
+export default function UserMenu({ onLogOutOpen, user }) {
   const avatar = useMemo(() => user?.avatar, [user]);
-  const [openDialog, setOpenDialog] = useState(false);
   return (
     <>
       <DropdownMenu>
@@ -89,7 +88,7 @@ export default function UserMenu({ handleLogout, user }) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => setOpenDialog(true)}
+            onClick={onLogOutOpen}
             className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-700 focus:bg-red-50 dark:focus:text-red-300 dark:focus:bg-red-900/50 py-2 text-sm"
           >
             <LogOut className="ml-2 h-4 w-4" />
@@ -97,12 +96,6 @@ export default function UserMenu({ handleLogout, user }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      {openDialog && (
-        <LogoutDialog
-          onClose={() => setOpenDialog(false)}
-          openDialog={openDialog}
-        />
-      )}
     </>
   );
 }

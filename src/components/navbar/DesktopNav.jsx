@@ -9,7 +9,7 @@ const DesktopNav = ({
   user,
   onLoginOpen,
   onRegisterOpen,
-  handleLogout,
+  onLogOutOpen,
 }) => {
   return (
     <div className="hidden md:flex items-center gap-3">
@@ -26,7 +26,7 @@ const DesktopNav = ({
               <PlusCircle size={18} className="ml-2" /> إضافة ملخص
             </Button>
           </Link>
-          <UserMenu handleLogout={handleLogout} user={user} />
+          <UserMenu onLogOutOpen={onLogOutOpen} user={user} />
         </>
       ) : (
         <>
