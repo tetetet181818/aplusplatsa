@@ -274,7 +274,8 @@ export const useAuthStore = create((set, get) => ({
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
-      if (authError) throw authError;
+
+      if (authError || !user) throw authError || new Error("User not found");
 
       const { data, error } = await supabase
         .from("users")
@@ -295,6 +296,7 @@ export const useAuthStore = create((set, get) => ({
       set({
         loading: false,
         isAuthenticated: false,
+        user: null,
       });
       return null;
     }
@@ -739,16 +741,3 @@ export const useAuthStore = create((set, get) => ({
 
   clearError: () => set({ error: null }),
 }));
-
-supabase.auth.onAuthStateChange((event, session) => {
-  const store = useAuthStore.getState();
-
-  if (event === "SIGNED_IN" && session?.user) {
-    store.getUser();
-  } else if (event === "SIGNED_OUT") {
-    store.setState({
-      isAuthenticated: false,
-      user: null,
-    });
-  }
-});

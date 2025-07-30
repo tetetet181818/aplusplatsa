@@ -58,7 +58,7 @@ export default function WithdrawalForm({
             formik={formik}
             disabled={isProcessingWithdrawal}
             placeholder={`الحد الأدنى 50 ريال (الحد الأقصى 2)`}
-            min="50"
+            min="3"
             max={netEarnings}
           />
 
