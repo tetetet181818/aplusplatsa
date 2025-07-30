@@ -83,7 +83,7 @@ const EarningsTab = ({ currentUser, getSellerNotes }) => {
         ),
       withdrawalAmount: Yup.number()
         .required("مبلغ السحب مطلوب")
-        .min(50, "الحد الأدنى للسحب هو 50 ريال")
+        .min(3, "الحد الأدنى للسحب هو 3 ريال")
         .test(
           Yup.ref(`${withdrawalAmount}`),
           "لا يمكنك سحب مبلغ أكبر من رصيدك المتاح",
