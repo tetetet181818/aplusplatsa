@@ -27,7 +27,7 @@ const MobileMenu = ({
   onLoginOpen,
   onRegisterOpen,
   user,
-  onLogOutOpen,
+  handleLogout,
 }) => {
   if (!isOpen) return null;
 
@@ -113,7 +113,7 @@ const MobileMenu = ({
               <Button
                 variant="ghost"
                 className="w-full justify-start text-red-600 dark:text-red-400 text-base py-3"
-                onClick={linkAction(onLogOutOpen)}
+                onClick={linkAction(handleLogout)}
               >
                 <LogOut className="ml-3 h-5 w-5" />
                 تسجيل الخروج

@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   LogOut,
   PlusCircle,
@@ -16,11 +16,8 @@ import {
   Settings,
   LayoutDashboard,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { use } from "react";
-import LogoutDialog from "./LogoutDialog";
-export default function UserMenu({ onLogOutOpen, user }) {
-  const avatar = useMemo(() => user?.avatar, [user]);
+
+export default function UserMenu({ handleLogout, user }) {
   return (
     <>
       <DropdownMenu>
@@ -88,7 +85,7 @@ export default function UserMenu({ onLogOutOpen, user }) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={onLogOutOpen}
+            onClick={handleLogout}
             className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-700 focus:bg-red-50 dark:focus:text-red-300 dark:focus:bg-red-900/50 py-2 text-sm"
           >
             <LogOut className="ml-2 h-4 w-4" />

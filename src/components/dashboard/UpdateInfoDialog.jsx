@@ -71,11 +71,16 @@ export default function UpdateInfoDialog({
                 value={formik.values.full_name}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                readOnly
+                disabled={true}
               />
             </div>
             {formik.touched.full_name && formik.errors.full_name && (
               <p className="text-sm text-red-500">{formik.errors.full_name}</p>
             )}
+            <p className="text-xs text-gray-500">
+              * لا يمكنك التعديل علي اسم المستخدم
+            </p>
           </div>
 
           <div className="space-y-2">

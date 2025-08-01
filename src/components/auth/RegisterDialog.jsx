@@ -237,7 +237,7 @@ const RegisterDialog = ({ isOpen, onClose, onSwitchToLogin }) => {
           <button
             type="submit"
             disabled={loading || formik.isSubmitting || !termsAccepted}
-            className="w-full py-2 px-4 bg-primary text-white rounded-md hover:bg-primary-dark transition flex items-center justify-center disabled:opacity-70"
+            className="w-full py-2 px-4 bg-primary text-white rounded-md hover:bg-blue-800 transition flex items-center justify-center disabled:opacity-70"
           >
             {loading || formik.isSubmitting ? (
               <>
@@ -249,13 +249,6 @@ const RegisterDialog = ({ isOpen, onClose, onSwitchToLogin }) => {
             )}
           </button>
         </form>
-
-        <Link
-          to="/forget-password"
-          className="link hover:underline hover:text-blue-500 transition-colors"
-        >
-          نسيت كلمه المرور
-        </Link>
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
